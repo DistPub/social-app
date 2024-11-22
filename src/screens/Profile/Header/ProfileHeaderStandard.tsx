@@ -16,6 +16,7 @@ import {sanitizeHandle} from '#/lib/strings/handles'
 import {logger} from '#/logger'
 import {type Shadow, useProfileShadow} from '#/state/cache/profile-shadow'
 import {
+  getProfileBlockingUri,
   useProfileBlockMutationQueue,
   useProfileFollowMutationQueue,
 } from '#/state/queries/profile'
@@ -72,6 +73,7 @@ let ProfileHeaderStandard = ({
     [profile, moderationOpts],
   )
   const [, queueUnblock] = useProfileBlockMutationQueue(profile)
+  const blocking = getProfileBlockingUri(profile)
   const unblockPromptControl = Prompt.usePromptControl()
   const [showSuggestedFollows, setShowSuggestedFollows] = useState(false)
   const isBlockedUser =
@@ -193,7 +195,7 @@ let ProfileHeaderStandard = ({
           )}
           onConfirm={unblockAccount}
           confirmButtonCta={
-            profile.viewer?.blocking ? _(msg`Unblock`) : _(msg`Block`)
+            blocking ? _(msg`Unblock`) : _(msg`Block`)
           }
           confirmButtonColor="negative"
         />
@@ -234,6 +236,7 @@ export function HeaderStandardButtons({
     'ProfileHeader',
   )
   const [, queueUnblock] = useProfileBlockMutationQueue(profile)
+  const blocking = getProfileBlockingUri(profile)
   const editProfileControl = useDialogControl()
   const unblockPromptControl = Prompt.usePromptControl()
 
@@ -334,7 +337,7 @@ export function HeaderStandardButtons({
           </Button>
           <EditProfileDialog profile={profile} control={editProfileControl} />
         </>
-      ) : profile.viewer?.blocking ? (
+      ) : blocking ? (
         profile.viewer?.blockingByList ? null : (
           <Button
             testID="unblockBtn"

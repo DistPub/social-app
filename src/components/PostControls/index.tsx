@@ -19,7 +19,8 @@ import {
   usePostLikeMutationQueue,
   usePostRepostMutationQueue,
 } from '#/state/queries/post'
-import {useRequireAuth} from '#/state/session'
+import {useAgent, useRequireAuth} from '#/state/session'
+import {useShortcutTopicBufferBan} from '#/state/session/agent-config'
 import {
   ProgressGuideAction,
   useProgressGuideControls,
@@ -39,6 +40,7 @@ import {
 import {PostMenuButton} from './PostMenu'
 import {RepostButton} from './RepostButton'
 import {ShareMenuButton} from './ShareMenu'
+import {TopicBufferBanButton} from './TopicBufferBanButton'
 
 let PostControls = ({
   big,
@@ -101,6 +103,8 @@ let PostControls = ({
   const formatPostStatCount = useFormatPostStatCount()
 
   const [hasLikeIconBeenToggled, setHasLikeIconBeenToggled] = useState(false)
+  const agent = useAgent()
+  const [showShortcut] = useShortcutTopicBufferBan(agent.did ?? 'anonymouse')
 
   const onPressToggleLike = async () => {
     if (isBlocked) {
@@ -312,11 +316,21 @@ let PostControls = ({
         <View />
       </View>
       <View style={[a.flex_row, a.justify_end, secondaryControlSpacingStyles]}>
+        { showShortcut && <TopicBufferBanButton
+          post={post}
+          big={big}
+          onShowLess={onShowLess}
+          postFeedContext={feedContext}
+          hitSlop={{
+            right: secondaryControlSpacingStyles.gap / 2,
+          }}
+        />}
         <BookmarkButton
           post={post}
           big={big}
           logContext={logContext}
           hitSlop={{
+            left: secondaryControlSpacingStyles.gap / 2,
             right: secondaryControlSpacingStyles.gap / 2,
           }}
         />

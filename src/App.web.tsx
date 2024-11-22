@@ -53,7 +53,6 @@ import {useColorModeTheme} from '#/alf/util/useColorModeTheme'
 import {Provider as ContextMenuProvider} from '#/components/ContextMenu'
 import {useStarterPackEntry} from '#/components/hooks/useStarterPackEntry'
 import {Provider as IntentDialogProvider} from '#/components/intents/IntentDialogs'
-import {Provider as PolicyUpdateOverlayProvider} from '#/components/PolicyUpdateOverlay'
 import {Provider as PortalProvider} from '#/components/Portal'
 import {Provider as ActiveVideoProvider} from '#/components/Post/Embed/VideoEmbed/ActiveVideoWebContext'
 import {Provider as VideoVolumeProvider} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
@@ -133,9 +132,7 @@ function InnerApp() {
                   key={currentAccount?.did}>
                   <AnalyticsFeaturesContext>
                     <QueryProvider currentDid={currentAccount?.did}>
-                      <PolicyUpdateOverlayProvider>
                         <LiveEventsProvider>
-                          <AgeAssuranceV2Provider>
                             <ComposerProvider>
                               <MessagesProvider>
                                 {/* LabelDefsProvider MUST come before ModerationOptsProvider */}
@@ -173,9 +170,7 @@ function InnerApp() {
                                 </LabelDefsProvider>
                               </MessagesProvider>
                             </ComposerProvider>
-                          </AgeAssuranceV2Provider>
                         </LiveEventsProvider>
-                      </PolicyUpdateOverlayProvider>
                     </QueryProvider>
                   </AnalyticsFeaturesContext>
                 </Fragment>

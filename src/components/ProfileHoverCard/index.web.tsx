@@ -430,7 +430,8 @@ function Inner({
     () => moderateProfile(profile, moderationOpts),
     [profile, moderationOpts],
   )
-  const [descriptionRT] = useRichText(profile.description ?? '')
+  const description = profile.description ?? ''
+  const [descriptionRT] = useRichText(description)
   const profileShadow = useProfileShadow(profile)
   const {follow, unfollow} = useFollowMethods({
     profile: profileShadow,
@@ -585,7 +586,7 @@ function Inner({
             </InlineLinkText>
           </View>
 
-          {profile.description?.trim() && !moderation.ui('profileView').blur ? (
+          {description?.trim() && !moderation.ui('profileView').blur ? (
             <View style={[a.pt_md]}>
               <RichText
                 numberOfLines={8}

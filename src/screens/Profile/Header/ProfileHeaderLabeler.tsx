@@ -137,7 +137,7 @@ let ProfileHeaderLabeler = ({
                 />
               </View>
             ) : undefined}
-            {!isAppLabeler(profile.did) && (
+            {true && (
               <View style={[a.flex_row, a.gap_xs, a.align_center, a.pt_lg]}>
                 <Button
                   testID="toggleLikeBtn"

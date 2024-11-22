@@ -204,6 +204,7 @@ let PostFeed = ({
   savedFeedConfig,
   initialNumToRender: initialNumToRenderOverride,
   isVideoFeed = false,
+  enableFilter = true,
 }: {
   feed: FeedDescriptor
   feedParams?: FeedParams
@@ -226,6 +227,7 @@ let PostFeed = ({
   savedFeedConfig?: AppBskyActorDefs.SavedFeed
   initialNumToRender?: number
   isVideoFeed?: boolean
+  enableFilter?: boolean
 }): React.ReactNode => {
   const ax = useAnalytics()
   const {_} = useLingui()
@@ -256,8 +258,8 @@ let PostFeed = ({
 
   const feedCacheKey = feedParams?.feedCacheKey
   const opts = useMemo(
-    () => ({enabled, ignoreFilterFor}),
-    [enabled, ignoreFilterFor],
+    () => ({enabled, ignoreFilterFor, enableFilter}),
+    [enabled, ignoreFilterFor, enableFilter],
   )
   const {
     data,
@@ -519,11 +521,11 @@ let PostFeed = ({
                       type: 'liveEventFeedsAndTrendingBanner',
                       key: 'liveEventFeedsAndTrendingBanner-' + sliceIndex,
                     })
-                    // Show composer prompt for Discover and Following feeds
+                    // not Show composer prompt for Discover and Following feeds
                     if (
                       hasSession &&
                       (feedUriOrActorDid === DISCOVER_FEED_URI ||
-                        feed === 'following')
+                        feed === 'following') && false
                     ) {
                       arr.push({
                         type: 'composerPrompt',
@@ -545,8 +547,8 @@ let PostFeed = ({
                   }
                 } else if (feedKind === 'following') {
                   if (sliceIndex === 0) {
-                    // Show composer prompt for Following feed
-                    if (hasSession) {
+                    // not Show composer prompt for Following feed
+                    if (hasSession && false) {
                       arr.push({
                         type: 'composerPrompt',
                         key: 'composerPrompt-' + sliceIndex,
@@ -1000,7 +1002,7 @@ let PostFeed = ({
         headerOffset={headerOffset}
         progressViewOffset={progressViewOffset}
         contentContainerStyle={{
-          minHeight: Dimensions.get('window').height * 1.5,
+          minHeight: !IS_WEB ? Dimensions.get('window').height * 1.5 : undefined,
         }}
         onScrolledDownChange={handleScrolledDownChange}
         onEndReached={onEndReached}
@@ -1011,7 +1013,7 @@ let PostFeed = ({
           desktopFixedHeightOffset ? desktopFixedHeightOffset : true
         }
         initialNumToRender={initialNumToRenderOverride ?? initialNumToRender}
-        windowSize={9}
+        windowSize={IS_WEB ? 3 : 9}
         maxToRenderPerBatch={IS_IOS ? 5 : 1}
         updateCellsBatchingPeriod={40}
         onItemSeen={onItemSeen}

@@ -564,12 +564,9 @@ export function parseTenorGif(urlp: URL):
       success: true
       playerUri: string
       dimensions: {height: number; width: number}
-    } {
-  if (urlp.hostname !== 'media.tenor.com') {
-    return {success: false}
-  }
-
-  let [__, id, filename] = urlp.pathname.split('/')
+  } {
+  const isFateskyCDN = urlp.host === 'fatesky-cdn.hukoubook.com'
+  let [_, id, filename] = isFateskyCDN ? urlp.pathname.slice('/gifs'.length).split('/') : urlp.pathname.split('/')
 
   if (!id || !filename) {
     return {success: false}
@@ -615,7 +612,7 @@ export function parseTenorGif(urlp: URL):
 
   return {
     success: true,
-    playerUri: `https://t.gifs.bsky.app/${id}/${filename}`,
+    playerUri: `https://fatesky-cdn.hukoubook.com/gifs/${id}/${filename}`,
     dimensions,
   }
 }

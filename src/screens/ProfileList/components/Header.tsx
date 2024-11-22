@@ -37,8 +37,10 @@ export function Header({
   const {_} = useLingui()
   const ax = useAnalytics()
   const {currentAccount} = useSession()
-  const isCurateList = list.purpose === AppBskyGraphDefs.CURATELIST
-  const isModList = list.purpose === AppBskyGraphDefs.MODLIST
+  const isCurateListIgnore = list.purpose === AppBskyGraphDefs.CURATELIST
+  const isCurateList = true
+  const isModListIgnore = list.purpose === AppBskyGraphDefs.MODLIST
+  const isModList = false
   const isBlocking = !!list.viewer?.blocked
   const isMuting = !!list.viewer?.muted
   const playHaptic = useHaptics()

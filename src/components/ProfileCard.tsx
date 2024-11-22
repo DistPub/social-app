@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import {
+  AtUri,
   moderateProfile,
   type ModerationOpts,
   RichText as RichTextApi,
@@ -406,10 +407,12 @@ export function Description({
   profile: bsky.profile.AnyProfileView
   numberOfLines?: number
 } & TextStyleProp) {
-  const profile = useProfileShadow(profileUnshadowed)
+  const profile = useProfileShadow(profileUnshadowed) as any
   const rt = useMemo(() => {
-    if (!('description' in profile)) return
-    const rt = new RichTextApi({text: profile.description || ''})
+    const text = profile.description ?? ''
+    if (text.length===0) return
+
+    const rt = new RichTextApi({text})
     rt.detectFacetsWithoutResolution()
     return rt
   }, [profile])

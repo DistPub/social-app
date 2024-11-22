@@ -66,7 +66,8 @@ export class MetricsClient<M extends Record<string, any>> {
     this.sendBatch(events)
   }
 
-  private async sendBatch(events: Event<M>[], isRetry: boolean = false) {
+  private async sendBatch(events: Event<M>[], isRetry: boolean = false) { }
+  private async sendBatchReal(events: Event<M>[], isRetry: boolean = false) {
     logger.debug(`sendBatch: ${events.length}`, {
       isRetry,
     })

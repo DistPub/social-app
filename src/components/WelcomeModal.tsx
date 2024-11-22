@@ -114,7 +114,7 @@ export function WelcomeModal({control}: WelcomeModalProps) {
                       a.user_select_none,
                       {color: '#354358', letterSpacing: -0.5},
                     ]}>
-                    Bluesky
+                    Fatesky
                   </Text>
                 </View>
               </View>
@@ -137,17 +137,15 @@ export function WelcomeModal({control}: WelcomeModalProps) {
                         'linear-gradient(180deg, #313F54 0%, #667B99 83.65%, rgba(102, 123, 153, 0.50) 100%)',
                       backgroundClip: 'text',
                       WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      color: 'transparent',
                       lineHeight: 1.2,
                       letterSpacing: -0.5,
                     }),
                   ]}>
-                  <Trans>Real people.</Trans>
+                  无任何中间审查
                   {'\n'}
-                  <Trans>Real conversations.</Trans>
+                  实时去中心化社交网络
                   {'\n'}
-                  <Trans>Social media you control.</Trans>
+                  ❤️ by @smitechow.com
                 </Text>
               </View>
               <View style={[a.gap_md, a.align_center]}>

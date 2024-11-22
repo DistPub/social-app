@@ -32,7 +32,7 @@ async function fetchAppConfig(): Promise<AppConfigResponse | null> {
   try {
     if (!fetchAppConfigPromise) {
       fetchAppConfigPromise = (async () => {
-        const r = await fetch(`${APP_CONFIG_URL}/config`)
+        const r = await fetch(`${APP_CONFIG_URL}/app_config`)
         if (!r.ok) throw new Error(await r.text())
         const data = await r.json()
         return data

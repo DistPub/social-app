@@ -38,14 +38,14 @@ module.exports = function (_config) {
   return {
     expo: {
       version: VERSION,
-      name: 'Bluesky',
+      name: 'Fatesky',
       slug: 'bluesky',
       scheme: 'bluesky',
       owner: 'blueskysocial',
       runtimeVersion: {
         policy: 'appVersion',
       },
-      icon: './assets/app-icons/ios_icon_default_next.png',
+      icon: './assets/favicon.png',
       userInterfaceStyle: 'automatic',
       primaryColor: '#1083fe',
       newArchEnabled: false,

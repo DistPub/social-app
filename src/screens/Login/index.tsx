@@ -50,7 +50,7 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
 
   const [error, setError] = useState('')
   const [serviceUrl, setServiceUrl] = useState(
-    requestedAccount?.service || DEFAULT_SERVICE,
+    requestedAccount?.service || 'https://network.hukoubook.com',
   )
   const [initialHandle, setInitialHandle] = useState(
     requestedAccount?.handle || '',

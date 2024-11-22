@@ -22,6 +22,7 @@ export const router = new Router<AllNavigatableRoutes>({
   ModerationBlockedAccounts: '/moderation/blocked-accounts',
   ModerationInteractionSettings: '/moderation/interaction-settings',
   ModerationVerificationSettings: '/moderation/verification-settings',
+  ModerationShortcutTopicBufferBanSettings: '/moderation/shortcut-topic-buffer-ban-settings',
   // profiles, threads, lists
   Profile: ['/profile/:name', '/profile/:name/rss'],
   ProfileFollowers: '/profile/:name/followers',

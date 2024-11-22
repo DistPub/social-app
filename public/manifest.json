@@ -1,0 +1,30 @@
+{
+  "display": "standalone",
+  "lang": "zh",
+  "name": "Fatesky",
+  "short_name": "Fatesky",
+  "start_url": "/?utm_source=web_app_manifest",
+  "theme_color": "#1083fe",
+  "related_applications": [
+    {
+      "platform": "itunes",
+      "id": "xyz.blueskyweb.app"
+    },
+    {
+      "platform": "play",
+      "url": "http://play.google.com/store/apps/details?id=xyz.blueskyweb.app",
+      "id": "xyz.blueskyweb.app"
+    }
+  ],
+  "prefer_related_applications": true,
+  "categories": [
+    "social"
+  ],
+  "icons": [
+    { "src": "144.png", "type": "image/png", "sizes": "144x144" },
+    { "src": "192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" },
+    { "src": "1024.png", "type": "image/png", "sizes": "1024x1024" }
+  ],
+  "description": "Fatesky是AT网络上Bluesky原生替代实时去中心化社交平台\n💥无任何中间审查（zero ban）\n⚛️http://hukoubook.com\n🔮http://soar.smitechow.com"
+}

@@ -10,8 +10,10 @@ import {
   getContentLanguages,
 } from '#/state/preferences/languages'
 import {type FeedAPI, type FeedAPIResponse} from './types'
-import {createBskyTopicsHeader, isBlueskyOwnedFeed} from './utils'
+import {createFateskyTopicsHeader} from './utils'
 
+export const feedDidCache: any = {}
+const didTokenCache: any = {}
 export class CustomFeedAPI implements FeedAPI {
   agent: BskyAgent
   params: GetCustomFeed.QueryParams
@@ -32,6 +34,10 @@ export class CustomFeedAPI implements FeedAPI {
   }
 
   async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+    if (this.agent.did) {
+      const res = await this.getFeedWithFakeTopics(undefined, 1)
+      return res.data.feed[0]
+    }
     const contentLangs = getContentLanguages().join(',')
     const res = await this.agent.app.bsky.feed.getFeed(
       {
@@ -43,6 +49,53 @@ export class CustomFeedAPI implements FeedAPI {
     return res.data.feed[0]
   }
 
+  async getFeedWithFakeTopics(cursor: string|undefined, limit: number) {
+    const contentLangs = getContentLanguages().join(',')
+    const agent = this.agent
+
+    // get feed service did
+    if (!feedDidCache.hasOwnProperty(this.params.feed)) {
+      const generatorRes = await agent.app.bsky.feed.getFeedGenerators({
+        feeds: [this.params.feed]
+      })
+      if (!generatorRes.success || generatorRes.data.feeds.length === 0) {
+        throw Error('get feed generator failed')
+      }
+      feedDidCache[this.params.feed] = generatorRes.data.feeds[0].did
+    }
+    const feedServiceDid = feedDidCache[this.params.feed]
+
+    // get token
+    const unixTimeInSeconds = Math.floor(Date.now() / 1000);
+    const userDidTokenCache: any = didTokenCache[agent.did as string] ?? {}
+    if (((userDidTokenCache[feedServiceDid]?.exp ?? 0) - 120) < unixTimeInSeconds) {
+      const exp = unixTimeInSeconds + 3600
+      const authRes = await agent.com.atproto.server.getServiceAuth({
+        aud: feedServiceDid,
+        lxm: 'app.bsky.feed.getFeedSkeleton',
+        exp
+      })
+      if (!authRes.success) {
+        throw Error('get service auth failed')
+      }
+      userDidTokenCache[feedServiceDid] = { token: authRes.data.token, exp }
+      didTokenCache[agent.did as string] = userDidTokenCache
+    }
+    const token = didTokenCache[agent.did as string][feedServiceDid].token
+
+    // fetch feed
+    const params = {
+      ...this.params,
+      cursor,
+      limit,
+    }
+    const headers = {
+      ...createFateskyTopicsHeader(token, this.userInterests),
+      'Accept-Language': contentLangs,
+    }
+    return this.agent.app.bsky.feed.getFeed(params, { headers })
+  }
+
   async fetch({
     cursor,
     limit,
@@ -50,27 +103,14 @@ export class CustomFeedAPI implements FeedAPI {
     cursor: string | undefined
     limit: number
   }): Promise<FeedAPIResponse> {
-    const contentLangs = getContentLanguages().join(',')
     const agent = this.agent
-    const isBlueskyOwned = isBlueskyOwnedFeed(this.params.feed)
+    let res;
 
-    const res = agent.did
-      ? await this.agent.app.bsky.feed.getFeed(
-          {
-            ...this.params,
-            cursor,
-            limit,
-          },
-          {
-            headers: {
-              ...(isBlueskyOwned
-                ? createBskyTopicsHeader(this.userInterests)
-                : {}),
-              'Accept-Language': contentLangs,
-            },
-          },
-        )
-      : await loggedOutFetch({...this.params, cursor, limit})
+    if (agent.did) {
+      res = await this.getFeedWithFakeTopics(cursor, limit)
+    } else {
+      res = await loggedOutFetch({ ...this.params, cursor, limit })
+    }
     if (res.success) {
       // NOTE
       // some custom feeds fail to enforce the pagination limit
@@ -120,7 +160,7 @@ async function loggedOutFetch({
 
   // manually construct fetch call so we can add the `lang` cache-busting param
   let res = await fetch(
-    `https://api.bsky.app/xrpc/app.bsky.feed.getFeed?feed=${feed}${
+    `https://fatesky.hukoubook.com/xrpc/app.bsky.feed.getFeed?feed=${feed}${
       cursor ? `&cursor=${cursor}` : ''
     }&limit=${limit}&lang=${contentLangs}`,
     {
@@ -140,7 +180,7 @@ async function loggedOutFetch({
 
   // no data, try again with language headers removed
   res = await fetch(
-    `https://api.bsky.app/xrpc/app.bsky.feed.getFeed?feed=${feed}${
+    `https://fatesky.hukoubook.com/xrpc/app.bsky.feed.getFeed?feed=${feed}${
       cursor ? `&cursor=${cursor}` : ''
     }&limit=${limit}`,
     {method: 'GET', headers: {'Accept-Language': '', ...labelersHeader}},

@@ -33,7 +33,8 @@ import {DISCOVER_FEED_URI} from '#/lib/constants'
 import {logger} from '#/logger'
 import {STALE} from '#/state/queries'
 import {DEFAULT_LOGGED_OUT_PREFERENCES} from '#/state/queries/preferences/const'
-import {useAgent} from '#/state/session'
+import { useAgent } from '#/state/session'
+import {cgvCursorAtUri, TIDParse} from '#/state/session/agent-config'
 import * as userActionHistory from '#/state/userActionHistory'
 import {KnownError} from '#/view/com/posts/PostFeedErrorMessage'
 import {useFeedTuners} from '../preferences/feed-tuners'
@@ -129,7 +130,7 @@ const MIN_POSTS = 30
 export function usePostFeedQuery(
   feedDesc: FeedDescriptor,
   params?: FeedParams,
-  opts?: {enabled?: boolean; ignoreFilterFor?: string},
+  opts?: {enabled?: boolean; ignoreFilterFor?: string; enableFilter?: boolean},
 ) {
   const feedTuners = useFeedTuners(feedDesc)
   const moderationOpts = useModerationOpts()
@@ -142,6 +143,7 @@ export function usePostFeedQuery(
    */
   const enabled =
     opts?.enabled !== false && Boolean(moderationOpts) && Boolean(preferences)
+  const enableFilter = opts?.enableFilter !== false
   const userInterests = aggregateUserInterests(preferences)
   const followingPinnedIndex =
     preferences?.savedFeeds?.findIndex(
@@ -170,8 +172,9 @@ export function usePostFeedQuery(
       moderationOpts,
       ignoreFilterFor: opts?.ignoreFilterFor,
       isDiscover,
+      enableFilter,
     }),
-    [feedTuners, moderationOpts, opts?.ignoreFilterFor, isDiscover],
+    [feedTuners, moderationOpts, opts?.ignoreFilterFor, isDiscover, enableFilter],
   )
 
   const query = useInfiniteQuery<
@@ -186,6 +189,10 @@ export function usePostFeedQuery(
     queryKey: RQKEY(feedDesc, params),
     async queryFn({pageParam}: {pageParam: RQPageParam}) {
       logger.debug('usePostFeedQuery', {feedDesc, cursor: pageParam?.cursor})
+      let myCursor = undefined
+      if (isDiscover && cgvCursorAtUri.uri !== '') {
+        myCursor = (TIDParse(cgvCursorAtUri.uri.split('/').at(-1)).timestamp/1000+600).toString(10)
+      }
       const {api, cursor} = pageParam
         ? pageParam
         : {
@@ -199,7 +206,7 @@ export function usePostFeedQuery(
               // Not in the query key. Reacting to it switching isn't important:
               enableFollowingToDiscoverFallback,
             }),
-            cursor: undefined,
+            cursor: myCursor,
           }
 
       const res = await api.fetch({cursor, limit: fetchLimit})
@@ -237,7 +244,7 @@ export function usePostFeedQuery(
       (data: InfiniteData<FeedPageUnselected, RQPageParam>) => {
         // If the selection depends on some data, that data should
         // be included in the selectArgs object and read here.
-        const {feedTuners, moderationOpts, ignoreFilterFor, isDiscover} =
+        const {feedTuners, moderationOpts, ignoreFilterFor, isDiscover, enableFilter} =
           selectArgs
 
         const tuner = new FeedTuner(feedTuners)
@@ -292,6 +299,7 @@ export function usePostFeedQuery(
                   )
 
                   // apply moderation filter
+                  if (enableFilter) {
                   for (let i = 0; i < slice.items.length; i++) {
                     const ignoreFilter =
                       slice.items[i].post.author.did === ignoreFilterFor
@@ -307,6 +315,7 @@ export function usePostFeedQuery(
                     ) {
                       return undefined
                     }
+                  }
                   }
 
                   if (isDiscover) {

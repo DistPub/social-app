@@ -14,6 +14,11 @@ import {IS_ANDROID, IS_IOS} from '#/env'
  * clipboard.
  */
 export async function shareUrl(url: string) {
+  let new_url = new URL(url)
+  if (new_url.host === 'bsky.app') {
+    new_url.host = 'app.hukoubook.com'
+    url = new_url.toString()
+  }
   if (IS_ANDROID) {
     await Share.share({message: url})
   } else if (IS_IOS) {

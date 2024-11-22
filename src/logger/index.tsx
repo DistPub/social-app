@@ -46,7 +46,7 @@ export class Logger {
       metadata,
     })
     for (const transport of TRANSPORTS) {
-      logger.addTransport(transport)
+      //logger.addTransport(transport)
     }
     return logger
   }

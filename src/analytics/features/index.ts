@@ -44,7 +44,7 @@ export const features = new GrowthBook({
  * initialization completes.
  */
 export const init = new Promise<void>(async y => {
-  await features.init({timeout: TIMEOUT_INIT})
+  // await features.init({timeout: TIMEOUT_INIT})
   y()
 })
 
@@ -53,12 +53,12 @@ export const init = new Promise<void>(async y => {
  * provided account, if any.
  */
 export async function refresh({strategy}: {strategy: FeatureFetchStrategy}) {
-  await features.refreshFeatures({
+  /*await features.refreshFeatures({
     timeout:
       strategy === 'prefer-low-latency'
         ? TIMEOUT_PREFER_LOW_LATENCY
         : TIMEOUT_PREFER_FRESH_GATES,
-  })
+  })*/
 }
 
 /**

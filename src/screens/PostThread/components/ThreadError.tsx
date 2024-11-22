@@ -27,10 +27,10 @@ export function ThreadError({
     let message = _(msg`Something went wrong. Please try again in a moment.`)
 
     const {raw, clean} = cleanError(error)
+    message = clean || raw || message
 
     if (error.message.startsWith('Post not found')) {
       title = _(msg`Post not found`)
-      message = clean || raw || message
     }
 
     return {title, message}
