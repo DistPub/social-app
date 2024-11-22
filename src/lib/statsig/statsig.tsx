@@ -120,6 +120,7 @@ type GateOptions = {
 export function useGate(): (gateName: Gate, options?: GateOptions) => boolean {
   const cache = React.useContext(GateCache)
   if (!cache) {
+    return
     throw Error('useGate() cannot be called outside StatsigProvider.')
   }
   const gate = React.useCallback(
