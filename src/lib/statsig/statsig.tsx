@@ -235,8 +235,7 @@ export async function tryFetchGates(
 }
 
 export function initialize() {
-  // unofficial prevent
-  // return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
+  return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
 }
 
 export function Provider({children}: {children: React.ReactNode}) {
@@ -275,11 +274,10 @@ export function Provider({children}: {children: React.ReactNode}) {
       Statsig.prefetchUsers([currentStatsigUser, ...otherStatsigUsers])
     }
   })
-  // unofficial should prevent the call
-  // React.useEffect(() => {
-  //   const id = setInterval(handleIntervalTick, 60e3 /* 1 min */)
-  //   return () => clearInterval(id)
-  // }, [handleIntervalTick])
+  React.useEffect(() => {
+    const id = setInterval(handleIntervalTick, 60e3 /* 1 min */)
+    return () => clearInterval(id)
+  }, [handleIntervalTick])
 
   return (
     <GateCache.Provider value={gateCache}>
