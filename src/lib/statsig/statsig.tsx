@@ -274,10 +274,11 @@ export function Provider({children}: {children: React.ReactNode}) {
       Statsig.prefetchUsers([currentStatsigUser, ...otherStatsigUsers])
     }
   })
-  React.useEffect(() => {
-    const id = setInterval(handleIntervalTick, 60e3 /* 1 min */)
-    return () => clearInterval(id)
-  }, [handleIntervalTick])
+  // unofficial should prevent the call
+  // React.useEffect(() => {
+  //   const id = setInterval(handleIntervalTick, 60e3 /* 1 min */)
+  //   return () => clearInterval(id)
+  // }, [handleIntervalTick])
 
   return (
     <GateCache.Provider value={gateCache}>
