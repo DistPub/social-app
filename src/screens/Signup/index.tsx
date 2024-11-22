@@ -231,9 +231,9 @@ export function Signup({onPressBack}: {onPressBack: () => void}) {
                       <Trans>Having trouble?</Trans>{' '}
                       <InlineLinkText
                         label={_(msg`Contact support`)}
-                        to={FEEDBACK_FORM_URL({email: state.email})}
+                        to="/profile/fatesky-social.hukoubook.com"
                         style={[!gtMobile && a.text_md]}>
-                        <Trans>Contact support</Trans>
+                        <Trans>Feedback</Trans>
                       </InlineLinkText>
                     </Text>
                   </View>

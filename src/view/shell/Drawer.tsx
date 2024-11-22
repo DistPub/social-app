@@ -324,11 +324,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           <ExtraLinks />
         </View>
       </ScrollView>
-
-      <DrawerFooter
-        onPressFeedback={onPressFeedback}
-        onPressHelp={onPressHelp}
-      />
     </View>
   )
 }
@@ -695,16 +690,14 @@ function ExtraLinks() {
   return (
     <View style={[a.flex_col, a.gap_md, a.flex_wrap]}>
       <InlineLinkText
-        style={[a.text_md]}
-        label={_(msg`Terms of Service`)}
-        to="https://bsky.social/about/support/tos">
-        <Trans>Terms of Service</Trans>
+        to="/profile/fatesky-social.hukoubook.com"
+        label={_(msg`Feedback`)}>
+        {_(msg`Feedback`)}
       </InlineLinkText>
       <InlineLinkText
-        style={[a.text_md]}
-        to="https://bsky.social/about/support/privacy-policy"
-        label={_(msg`Privacy Policy`)}>
-        <Trans>Privacy Policy</Trans>
+        to="https://soar.smitechow.com"
+        label={_(msg`💥邀请你试用Soar遨游蓝天`)}>
+        {_(msg`💥邀请你试用Soar遨游蓝天`)}
       </InlineLinkText>
       {kawaii && (
         <Text style={t.atoms.text_contrast_medium}>

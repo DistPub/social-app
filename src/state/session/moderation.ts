@@ -38,7 +38,7 @@ export async function configureModerationForAccount(
 }
 
 function switchToBskyAppLabeler() {
-  BskyAgent.configure({appLabelers: [BSKY_LABELER_DID]})
+  BskyAgent.configure({appLabelers: [BSKY_LABELER_DID, 'did:web:cgv.hukoubook.com']})
 }
 
 async function trySwitchToTestAppLabeler(agent: BskyAgent) {

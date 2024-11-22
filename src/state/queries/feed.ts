@@ -19,6 +19,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
+import {feedDidCache} from '#/lib/api/feed/custom'
 import {DISCOVER_FEED_URI, DISCOVER_SAVED_FEED} from '#/lib/constants'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
@@ -393,7 +394,7 @@ export type SavedFeedSourceInfo = FeedSourceInfo & {
 
 const PWI_DISCOVER_FEED_STUB: SavedFeedSourceInfo = {
   type: 'feed',
-  displayName: 'Discover',
+  displayName: '中国好声音',
   uri: DISCOVER_FEED_URI,
   feedDescriptor: `feedgen|${DISCOVER_FEED_URI}`,
   route: {
@@ -454,6 +455,7 @@ export function usePinnedFeedsInfos() {
             for (let i = 0; i < res.data.feeds.length; i++) {
               const feedView = res.data.feeds[i]
               resolved.set(feedView.uri, hydrateFeedGenerator(feedView))
+              feedDidCache[feedView.uri] = feedView.did
             }
           })
       }

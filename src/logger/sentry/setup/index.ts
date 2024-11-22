@@ -2,7 +2,8 @@ import {init} from '@sentry/react-native'
 
 import * as env from '#/env'
 
-init({
+function initIgnore() { }
+initIgnore({
   enabled: !env.IS_DEV && !!env.SENTRY_DSN,
   autoSessionTracking: false,
   dsn: env.SENTRY_DSN,

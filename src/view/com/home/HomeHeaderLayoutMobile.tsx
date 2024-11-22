@@ -14,6 +14,7 @@ import {useShellLayout} from '#/state/shell/shell-layout'
 import {Logo} from '#/view/icons/Logo'
 import {atoms as a, useTheme} from '#/alf'
 import {ButtonIcon} from '#/components/Button'
+import useIOSStatusBarFix from '#/components/hooks/useFixIos'
 import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -24,6 +25,7 @@ export function HomeHeaderLayoutMobile({
   children: React.ReactNode
   tabBarAnchor: JSX.Element | null | undefined
 }) {
+  const top = useIOSStatusBarFix()
   const t = useTheme()
   const {_} = useLingui()
   const {headerHeight} = useShellLayout()
@@ -41,6 +43,7 @@ export function HomeHeaderLayoutMobile({
           top: 0,
           left: 0,
           right: 0,
+          paddingTop: top,
         },
         headerMinimalShellTransform,
       ]}

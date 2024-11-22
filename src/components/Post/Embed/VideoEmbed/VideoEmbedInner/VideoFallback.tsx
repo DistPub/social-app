@@ -1,4 +1,5 @@
-import {View} from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import {ImageBackground} from 'react-native'
 import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
@@ -8,10 +9,30 @@ import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as ArrowRotateIcon} 
 import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import {Text as TypoText} from '#/components/Typography'
 
-export function Container({children}: {children: React.ReactNode}) {
+export function Container({children, thumb}: {children: React.ReactNode, thumb?: string}) {
   const t = useTheme()
+  const [shown, setShown] = useState(false);
+  const containerRef = useRef<any>(null)
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
   return (
-    <View
+    <ImageBackground
+      ref={containerRef}
+      source={shown ? {uri: thumb} : undefined}
+      resizeMode="cover"
       style={[
         a.flex_1,
         t.atoms.bg_contrast_25,
@@ -23,8 +44,7 @@ export function Container({children}: {children: React.ReactNode}) {
         a.gap_lg,
       ]}>
       {children}
-      <MediaInsetBorder />
-    </View>
+    </ImageBackground>
   )
 }
 

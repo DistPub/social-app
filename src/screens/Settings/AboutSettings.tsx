@@ -1,4 +1,5 @@
-import {Platform} from 'react-native'
+import {useMemo} from 'react'
+import {Platform, View} from 'react-native'
 import {setStringAsync} from 'expo-clipboard'
 import * as FileSystem from 'expo-file-system/legacy'
 import {Image} from 'expo-image'
@@ -7,7 +8,7 @@ import {useLingui} from '@lingui/react'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {useMutation} from '@tanstack/react-query'
 
-import {STATUS_PAGE_URL} from '#/lib/constants'
+import {STATUS_PAGE_URL, FATESKY_SUPPORT_XRPC_LXM} from '#/lib/constants'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import * as Toast from '#/view/com/util/Toast'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
@@ -25,6 +26,8 @@ import * as env from '#/env'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 import {OTAInfo} from './components/OTAInfo'
+import * as Admonition from '#/components/Admonition'
+import {atoms as a} from '#/alf'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'AboutSettings'>
 export function AboutSettingsScreen({}: Props) {
@@ -78,27 +81,11 @@ export function AboutSettingsScreen({}: Props) {
       <Layout.Content>
         <SettingsList.Container>
           <SettingsList.LinkItem
-            to="https://bsky.social/about/support/tos"
-            label={_(msg`Terms of Service`)}>
-            <SettingsList.ItemIcon icon={NewspaperIcon} />
-            <SettingsList.ItemText>
-              <Trans>Terms of Service</Trans>
-            </SettingsList.ItemText>
-          </SettingsList.LinkItem>
-          <SettingsList.LinkItem
-            to="https://bsky.social/about/support/privacy-policy"
-            label={_(msg`Privacy Policy`)}>
-            <SettingsList.ItemIcon icon={NewspaperIcon} />
-            <SettingsList.ItemText>
-              <Trans>Privacy Policy</Trans>
-            </SettingsList.ItemText>
-          </SettingsList.LinkItem>
-          <SettingsList.LinkItem
-            to={STATUS_PAGE_URL}
-            label={_(msg`Status Page`)}>
+            to={"https://soar.smitechow.com"}
+            label={"soar"}>
             <SettingsList.ItemIcon icon={GlobeIcon} />
             <SettingsList.ItemText>
-              <Trans>Status Page</Trans>
+              💥邀请你试用Soar遨游蓝天
             </SettingsList.ItemText>
           </SettingsList.LinkItem>
           <SettingsList.Divider />
@@ -179,6 +166,22 @@ export function AboutSettingsScreen({}: Props) {
               )}
             </>
           )}
+          <SettingsList.Divider />
+          <SettingsList.Item>
+            <Admonition.Outer type="tip" style={[a.flex_1]}>
+              <Admonition.Row>
+                <Admonition.Icon />
+                <View style={[a.flex_1, a.gap_sm]}>
+                  <Admonition.Text>
+                    fatesky已支持如下XRPC方法：
+                  </Admonition.Text>
+                  <Admonition.Text>
+                    { `${JSON.stringify(FATESKY_SUPPORT_XRPC_LXM, null, '\t')}` }
+                  </Admonition.Text>
+                </View>
+              </Admonition.Row>
+            </Admonition.Outer>
+          </SettingsList.Item>
         </SettingsList.Container>
       </Layout.Content>
     </Layout.Screen>

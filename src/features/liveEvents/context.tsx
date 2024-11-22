@@ -24,7 +24,7 @@ export const DEFAULT_LIVE_EVENTS = {
 
 async function fetchLiveEvents(): Promise<LiveEventsWorkerResponse | null> {
   try {
-    const res = await fetch(`${LIVE_EVENTS_URL}/config`)
+    const res = await fetch(`${LIVE_EVENTS_URL}/live_events`)
     if (!res.ok) return null
     const data = await res.json()
     return data

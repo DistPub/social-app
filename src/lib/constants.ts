@@ -9,8 +9,8 @@ export const LOCAL_DEV_SERVICE =
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
 export const BSKY_SERVICE_DID = 'did:web:bsky.social'
-export const PUBLIC_BSKY_SERVICE = 'https://public.api.bsky.app'
-export const DEFAULT_SERVICE = BSKY_SERVICE
+export const PUBLIC_BSKY_SERVICE = 'https://fatesky.hukoubook.com'
+export const DEFAULT_SERVICE = 'https://network.hukoubook.com'
 const HELP_DESK_LANG = 'en-us'
 export const HELP_DESK_URL = `https://blueskyweb.zendesk.com/hc/${HELP_DESK_LANG}`
 export const EMBED_SERVICE = 'https://embed.bsky.app'
@@ -81,7 +81,7 @@ export function IS_PROD_SERVICE(url?: string) {
 }
 
 export const PROD_DEFAULT_FEED = (rkey: string) =>
-  `at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/${rkey}`
+  `at://did:web:board.hukoubook.com/app.bsky.feed.generator/china-good-voice`
 
 export const STAGING_DEFAULT_FEED = (rkey: string) =>
   `at://did:plc:yofh3kx63drvfljkibw5zuxo/app.bsky.feed.generator/${rkey}`
@@ -105,7 +105,7 @@ export const POST_IMG_MAX = {
 export const STAGING_LINK_META_PROXY =
   'https://cardyb.staging.bsky.dev/v1/extract?url='
 
-export const PROD_LINK_META_PROXY = 'https://cardyb.bsky.app/v1/extract?url='
+export const PROD_LINK_META_PROXY = 'https://fatesky-cdn.hukoubook.com/v1/extract?url='
 
 export function LINK_META_PROXY(serviceUrl: string) {
   if (IS_PROD_SERVICE(serviceUrl)) {
@@ -140,7 +140,7 @@ export const BSKY_FEED_OWNER_DIDS = [
 ]
 
 export const DISCOVER_FEED_URI =
-  'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot'
+  'at://did:web:board.hukoubook.com/app.bsky.feed.generator/china-good-voice'
 export const VIDEO_FEED_URI =
   'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids'
 export const STAGING_VIDEO_FEED_URI =
@@ -171,7 +171,7 @@ export const KNOWN_SHUTDOWN_FEEDS = [
   'at://did:plc:wqowuobffl66jv3kpsvo7ak4/app.bsky.feed.generator/the-algorithm', // for you by skygaze
 ]
 
-export const GIF_SERVICE = 'https://gifs.bsky.app'
+export const GIF_SERVICE = 'https://fatesky-cdn.hukoubook.com'
 
 export const GIF_SEARCH = (params: string) =>
   `${GIF_SERVICE}/tenor/v2/search?${params}`
@@ -180,8 +180,8 @@ export const GIF_FEATURED = (params: string) =>
 
 export const MAX_LABELERS = 20
 
-export const VIDEO_SERVICE = 'https://video.bsky.app'
-export const VIDEO_SERVICE_DID = 'did:web:video.bsky.app'
+export const VIDEO_SERVICE = 'https://fatesky.hukoubook.com'
+export const VIDEO_SERVICE_DID = 'did:web:fatesky.hukoubook.com'
 
 export const VIDEO_MAX_DURATION_MS = 3 * 60 * 1000 // 3 minutes in milliseconds
 /**
@@ -233,6 +233,86 @@ export const BLUESKY_PROXY_HEADER = {
   set(value: string) {
     this.value = value
   },
+}
+
+export const FATESKY_SUPPORT_XRPC_LXM = [
+  'com.atproto.identity.resolveDid',
+  'app.bsky.actor.getProfile',
+  'com.atproto.identity.resolveHandle',
+  'com.atproto.label.queryLabels',
+  'com.atproto.repo.getRecord',
+  'com.atproto.repo.listRecords',
+  'app.bsky.unspecced.getPostThreadV2',
+  'app.bsky.feed.getFeed',
+  'app.bsky.feed.getTimeline',
+  'app.bsky.graph.getLists',
+  "app.bsky.graph.getList",
+  "app.bsky.feed.getListFeed",
+  "app.bsky.actor.getProfiles",
+  "app.bsky.feed.getPostThread",
+  'app.bsky.feed.getLikes',
+  'app.bsky.feed.getRepostedBy',
+  'app.bsky.feed.getQuotes',
+  'app.bsky.graph.getFollowers',
+  'app.bsky.graph.getFollows',
+  'app.bsky.feed.getActorLikes',
+  'app.bsky.graph.getActorStarterPacks',
+  'app.bsky.graph.getStarterPack',
+  'app.bsky.feed.getActorFeeds',
+  'app.bsky.feed.getAuthorFeed',
+  'app.bsky.video.getUploadLimits',
+  'app.bsky.video.getJobStatus',
+  'app.bsky.feed.getFeedGenerators',
+  'app.bsky.feed.getFeedGenerator',
+  '_health',
+  'app.bsky.labeler.getServices',
+  'app.bsky.unspecced.getConfig',
+  'app.bsky.actor.searchActorsTypeahead',
+  'app.bsky.actor.searchActors',
+  'app.bsky.unspecced.getPopularFeedGenerators',
+  'app.bsky.feed.getPosts',
+  'app.bsky.graph.getBlocks',
+  'app.bsky.ageassurance.getConfig',
+  'app.bsky.notification.listNotifications',
+  'app.bsky.notification.updateSeen',
+]
+export const HACK_FATESKY_SEARCH_PARAM_LIMIT = [
+  'app.bsky.feed.getTimeline',
+  'app.bsky.feed.getFeed',
+  'app.bsky.feed.getAuthorFeed',
+  'app.bsky.feed.getListFeed',
+  'app.bsky.feed.getActorLikes',
+]
+export function useFateskyAppview(...args) {
+  let req = new globalThis.Request(...args)
+  const url = new globalThis.URL(req.url)
+  const pageUrl = new globalThis.URL(globalThis.location.href)
+  if (url.pathname.startsWith('/xrpc/')) {
+    const lxm = url.pathname.slice('/xrpc/'.length)
+    if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
+      req.headers.set('atproto-proxy', 'did:web:fatesky.hukoubook.com#fatesky_appview')
+
+      // use fake(discover) feed param for logined user
+      // because PDS will leak feed param to bsky appView
+      if (lxm === 'app.bsky.feed.getFeed' && req.headers.get('authorization')) {
+        url.searchParams.set('xfeed', url.searchParams.get('feed') as string)
+        url.searchParams.set('feed', 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot')
+        req = new globalThis.Request(url, req)
+      }
+
+      // if feed can't load in pds 40s requirements
+      // you can hack the limit param by set it in page search param
+      if (HACK_FATESKY_SEARCH_PARAM_LIMIT.includes(lxm) && pageUrl.searchParams.get('limit')) {
+        url.searchParams.set('limit', pageUrl.searchParams.get('limit') as string)
+        req = new globalThis.Request(url, req)
+      }
+    }
+  }
+  return req
+}
+
+export const BLUESKY_SERVICE_HEADERS = {
+  'atproto-proxy': BLUESKY_PROXY_HEADER
 }
 
 export const DM_SERVICE_HEADERS = {

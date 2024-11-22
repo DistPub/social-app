@@ -99,37 +99,17 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
         {hasSession && (
           <>
             <InlineLinkText
-              to={FEEDBACK_FORM_URL({
-                email: currentAccount?.email,
-                handle: currentAccount?.handle,
-              })}
-              style={[t.atoms.text_contrast_medium]}
+              to="/profile/fatesky-social.hukoubook.com"
               label={_(msg`Feedback`)}>
               {_(msg`Feedback`)}
             </InlineLinkText>
-            <Text style={[t.atoms.text_contrast_low]}>{' ∙ '}</Text>
+            <InlineLinkText
+              to="https://soar.smitechow.com"
+              label={_(msg`💥邀请你试用Soar遨游蓝天`)}>
+              {_(msg`💥邀请你试用Soar遨游蓝天`)}
+            </InlineLinkText>
           </>
         )}
-        <InlineLinkText
-          to="https://bsky.social/about/support/privacy-policy"
-          style={[t.atoms.text_contrast_medium]}
-          label={_(msg`Privacy`)}>
-          {_(msg`Privacy`)}
-        </InlineLinkText>
-        <Text style={[t.atoms.text_contrast_low]}>{' ∙ '}</Text>
-        <InlineLinkText
-          to="https://bsky.social/about/support/tos"
-          style={[t.atoms.text_contrast_medium]}
-          label={_(msg`Terms`)}>
-          {_(msg`Terms`)}
-        </InlineLinkText>
-        <Text style={[t.atoms.text_contrast_low]}>{' ∙ '}</Text>
-        <InlineLinkText
-          label={_(msg`Help`)}
-          to={HELP_DESK_URL}
-          style={[t.atoms.text_contrast_medium]}>
-          {_(msg`Help`)}
-        </InlineLinkText>
       </Text>
 
       {kawaii && (

@@ -30,8 +30,8 @@ export function DiscoverFallbackHeader() {
             We ran out of posts from your follows. Here's the latest from{' '}
             <TextLink
               type="md-medium"
-              href="/profile/bsky.app/feed/whats-hot"
-              text="Discover"
+              href="/profile/board.hukoubook.com/feed/china-good-voice"
+              text="中国好声音"
               style={pal.link}
             />
             .
