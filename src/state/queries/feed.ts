@@ -395,7 +395,7 @@ export type SavedFeedSourceInfo = FeedSourceInfo & {
 
 const PWI_DISCOVER_FEED_STUB: SavedFeedSourceInfo = {
   type: 'feed',
-  displayName: 'Discover',
+  displayName: '中国好声音',
   uri: DISCOVER_FEED_URI,
   feedDescriptor: `feedgen|${DISCOVER_FEED_URI}`,
   route: {

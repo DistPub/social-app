@@ -411,7 +411,7 @@ export const ComposePost = ({
       postUri = (
         await apilib.post(agent, queryClient, {
           thread,
-          replyTo: replyTo?.uri,
+          replyTo: {uri: replyTo?.uri, cid: replyTo?.cid},
           onStateChange: setPublishingStage,
           langs: toPostLanguages(langPrefs.postLanguage),
         })

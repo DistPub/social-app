@@ -10,12 +10,10 @@ import {useLingui} from '@lingui/react'
 import * as Sentry from '@sentry/react-native'
 
 import {QueryProvider} from '#/lib/react-query'
-import {Provider as StatsigProvider} from '#/lib/statsig/statsig'
 import {ThemeProvider} from '#/lib/ThemeContext'
 import I18nProvider from '#/locale/i18nProvider'
 import {logger} from '#/logger'
 import {Provider as A11yProvider} from '#/state/a11y'
-import {Provider as AgeAssuranceProvider} from '#/state/ageAssurance'
 import {Provider as MutedThreadsProvider} from '#/state/cache/thread-mutes'
 import {Provider as DialogStateProvider} from '#/state/dialogs'
 import {Provider as EmailVerificationProvider} from '#/state/email-verification'
@@ -58,7 +56,6 @@ import {Provider as ContextMenuProvider} from '#/components/ContextMenu'
 import {NuxDialogs} from '#/components/dialogs/nuxs'
 import {useStarterPackEntry} from '#/components/hooks/useStarterPackEntry'
 import {Provider as IntentDialogProvider} from '#/components/intents/IntentDialogs'
-import {Provider as PolicyUpdateOverlayProvider} from '#/components/PolicyUpdateOverlay'
 import {Provider as PortalProvider} from '#/components/Portal'
 import {Provider as ActiveVideoProvider} from '#/components/Post/Embed/VideoEmbed/ActiveVideoWebContext'
 import {Provider as VideoVolumeProvider} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
@@ -119,9 +116,6 @@ function InnerApp() {
                   // Resets the entire tree below when it changes:
                   key={currentAccount?.did}>
                   <QueryProvider currentDid={currentAccount?.did}>
-                    <PolicyUpdateOverlayProvider>
-                      <StatsigProvider>
-                        <AgeAssuranceProvider>
                           <ComposerProvider>
                             <MessagesProvider>
                               {/* LabelDefsProvider MUST come before ModerationOptsProvider */}
@@ -160,9 +154,6 @@ function InnerApp() {
                               </LabelDefsProvider>
                             </MessagesProvider>
                           </ComposerProvider>
-                        </AgeAssuranceProvider>
-                      </StatsigProvider>
-                    </PolicyUpdateOverlayProvider>
                   </QueryProvider>
                 </React.Fragment>
               </ActiveVideoProvider>

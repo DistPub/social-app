@@ -46,7 +46,7 @@ export {uploadBlob}
 
 interface PostOpts {
   thread: ThreadDraft
-  replyTo?: string
+  replyTo?: string | any
   onStateChange?: (state: string) => void
   langs?: string[]
 }
@@ -63,7 +63,7 @@ export async function post(
     | Promise<AppBskyFeedPost.Record['reply']>
     | AppBskyFeedPost.Record['reply']
     | undefined
-  if (opts.replyTo) {
+  if ((typeof opts.replyTo == 'object' && opts.replyTo.uri) || (typeof opts.replyTo == 'string' && opts.replyTo)) {
     // Not awaited to avoid waterfalls.
     replyPromise = resolveReply(agent, opts.replyTo)
   }
@@ -207,12 +207,26 @@ async function resolveRT(agent: BskyAgent, richtext: RichText) {
   return rt
 }
 
-async function resolveReply(agent: BskyAgent, replyTo: string) {
-  const replyToUrip = new AtUri(replyTo)
-  const parentPost = await agent.getPost({
-    repo: replyToUrip.host,
-    rkey: replyToUrip.rkey,
-  })
+async function resolveReply(agent: BskyAgent, replyTo: string | any) {
+  let atUri = null;
+  if (typeof replyTo == 'string')
+    atUri = replyTo
+  else
+    atUri = replyTo.uri
+  
+  const replyToUrip = new AtUri(atUri)
+  let parentPost = null
+  try {
+    parentPost = await agent.getPost({
+      repo: replyToUrip.host,
+      rkey: replyToUrip.rkey,
+    })
+  }  catch (e: any) {
+    if (typeof replyTo == 'object') {
+      return {root: replyTo, parent: replyTo}
+    }
+  }
+  
   if (parentPost) {
     const parentRef = {
       uri: parentPost.uri,

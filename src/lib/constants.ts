@@ -9,7 +9,7 @@ export const LOCAL_DEV_SERVICE =
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
 export const BSKY_SERVICE_DID = 'did:web:bsky.social'
-export const PUBLIC_BSKY_SERVICE = 'https://public.api.bsky.app'
+export const PUBLIC_BSKY_SERVICE = 'https://api.hukoubook.com'
 export const DEFAULT_SERVICE = BSKY_SERVICE
 const HELP_DESK_LANG = 'en-us'
 export const HELP_DESK_URL = `https://blueskyweb.zendesk.com/hc/${HELP_DESK_LANG}`
@@ -78,7 +78,7 @@ export function IS_PROD_SERVICE(url?: string) {
 }
 
 export const PROD_DEFAULT_FEED = (rkey: string) =>
-  `at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/${rkey}`
+  `at://did:web:smite.hukoubook.com/app.bsky.feed.generator/china-good-voice`
 
 export const STAGING_DEFAULT_FEED = (rkey: string) =>
   `at://did:plc:yofh3kx63drvfljkibw5zuxo/app.bsky.feed.generator/${rkey}`
@@ -102,7 +102,7 @@ export const POST_IMG_MAX = {
 export const STAGING_LINK_META_PROXY =
   'https://cardyb.staging.bsky.dev/v1/extract?url='
 
-export const PROD_LINK_META_PROXY = 'https://cardyb.bsky.app/v1/extract?url='
+export const PROD_LINK_META_PROXY = 'https://api.hukoubook.com/v1/extract?url='
 
 export function LINK_META_PROXY(serviceUrl: string) {
   if (IS_PROD_SERVICE(serviceUrl)) {
@@ -137,7 +137,7 @@ export const BSKY_FEED_OWNER_DIDS = [
 ]
 
 export const DISCOVER_FEED_URI =
-  'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot'
+  'at://did:web:smite.hukoubook.com/app.bsky.feed.generator/china-good-voice'
 export const VIDEO_FEED_URI =
   'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/thevids'
 export const STAGING_VIDEO_FEED_URI =
@@ -168,7 +168,7 @@ export const KNOWN_SHUTDOWN_FEEDS = [
   'at://did:plc:wqowuobffl66jv3kpsvo7ak4/app.bsky.feed.generator/the-algorithm', // for you by skygaze
 ]
 
-export const GIF_SERVICE = 'https://gifs.bsky.app'
+export const GIF_SERVICE = 'https://api.hukoubook.com'
 
 export const GIF_SEARCH = (params: string) =>
   `${GIF_SERVICE}/tenor/v2/search?${params}`
@@ -177,7 +177,7 @@ export const GIF_FEATURED = (params: string) =>
 
 export const MAX_LABELERS = 20
 
-export const VIDEO_SERVICE = 'https://video.bsky.app'
+export const VIDEO_SERVICE = 'https://api.hukoubook.com'
 export const VIDEO_SERVICE_DID = 'did:web:video.bsky.app'
 
 export const VIDEO_MAX_DURATION_MS = 3 * 60 * 1000 // 3 minutes in milliseconds

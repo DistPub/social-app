@@ -91,7 +91,7 @@ export function toBskyAppUrl(url: string): string {
 }
 
 export function isBskyAppUrl(url: string): boolean {
-  return url.startsWith('https://bsky.app/')
+  return url.startsWith('https://bsky.app/') || url.startsWith('https://app.hukoubook.com/')
 }
 
 export function isRelativeUrl(url: string): boolean {
@@ -326,6 +326,7 @@ export function createBskyAppAbsoluteUrl(path: string): string {
 }
 
 export function createProxiedUrl(url: string): string {
+  return url
   let u
   try {
     u = new URL(url)

@@ -189,6 +189,7 @@ let PostFeed = ({
   savedFeedConfig,
   initialNumToRender: initialNumToRenderOverride,
   isVideoFeed = false,
+  enableFilter = true,
 }: {
   feed: FeedDescriptor
   feedParams?: FeedParams
@@ -211,6 +212,7 @@ let PostFeed = ({
   savedFeedConfig?: AppBskyActorDefs.SavedFeed
   initialNumToRender?: number
   isVideoFeed?: boolean
+  enableFilter?: boolean
 }): React.ReactNode => {
   const {_} = useLingui()
   const queryClient = useQueryClient()
@@ -240,8 +242,8 @@ let PostFeed = ({
 
   const feedCacheKey = feedParams?.feedCacheKey
   const opts = useMemo(
-    () => ({enabled, ignoreFilterFor}),
-    [enabled, ignoreFilterFor],
+    () => ({enabled, ignoreFilterFor, enableFilter}),
+    [enabled, ignoreFilterFor, enableFilter],
   )
   const {
     data,

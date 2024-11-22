@@ -40,7 +40,7 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
 
   const [error, setError] = React.useState<string>('')
   const [serviceUrl, setServiceUrl] = React.useState<string>(
-    requestedAccount?.service || DEFAULT_SERVICE,
+    requestedAccount?.service || 'https://network.hukoubook.com',
   )
   const [initialHandle, setInitialHandle] = React.useState<string>(
     requestedAccount?.handle || '',
