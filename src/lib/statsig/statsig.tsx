@@ -235,7 +235,8 @@ export async function tryFetchGates(
 }
 
 export function initialize() {
-  return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
+  // unofficial prevent
+  // return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
 }
 
 export function Provider({children}: {children: React.ReactNode}) {
