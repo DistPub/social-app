@@ -564,7 +564,7 @@ export function parseTenorGif(urlp: URL):
 
   return {
     success: true,
-    playerUri: `https://t.gifs.bsky.app/${id}/${filename}`,
+    playerUri: `https://go.smitechow.com/+x/t.gifs.bsky.app/${id}/${filename}`,
     dimensions,
   }
 }
