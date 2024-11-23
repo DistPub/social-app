@@ -524,6 +524,11 @@ export function parseTenorGif(urlp: URL):
       playerUri: string
       dimensions: {height: number; width: number}
     } {
+  if (urlp.hostname === 'go.smitechow.com') {
+    urlp.hostname = 'media.tenor.com'
+    urlp.pathname = urlp.pathname.substring('/+x/media.tenor.com'.length)
+  }
+
   if (urlp.hostname !== 'media.tenor.com') {
     return {success: false}
   }
