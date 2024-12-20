@@ -2,8 +2,8 @@
 module.exports = {
   locales: [
     'en',
-    'ast',
     'an',
+    'ast',
     'ca',
     'de',
     'en-GB',
@@ -17,10 +17,13 @@ module.exports = {
     'id',
     'it',
     'ja',
+    'km',
     'ko',
     'nl',
+    'np',
     'pl',
     'pt-BR',
+    'ro',
     'ru',
     'th',
     'tr',

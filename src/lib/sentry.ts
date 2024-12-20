@@ -7,7 +7,7 @@ import {Platform} from 'react-native'
 import {nativeApplicationVersion, nativeBuildVersion} from 'expo-application'
 import {init} from '@sentry/react-native'
 
-import {BUILD_ENV, IS_DEV, IS_TESTFLIGHT} from '#/lib/app-info'
+import {IS_TESTFLIGHT} from '#/lib/app-info'
 
 /**
  * Examples:
@@ -27,7 +27,7 @@ const release = nativeApplicationVersion ?? 'dev'
  */
 const dist = `${Platform.OS}.${nativeBuildVersion}.${
   IS_TESTFLIGHT ? 'tf' : ''
-}${IS_DEV ? 'dev' : ''}`
+}${__DEV__ ? 'dev' : ''}`
 
 // init({
 //   enabled: !__DEV__,

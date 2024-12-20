@@ -10,7 +10,6 @@
 import React from 'react'
 import {formatDistance, Locale} from 'date-fns'
 import {
-  ast,
   ca,
   de,
   enGB,
@@ -23,10 +22,12 @@ import {
   id,
   it,
   ja,
+  km,
   ko,
   nl,
   pl,
   ptBR,
+  ro,
   ru,
   th,
   tr,
@@ -45,8 +46,8 @@ import {useLanguagePrefs} from '#/state/preferences'
  */
 const locales: Record<AppLanguage, Locale | undefined> = {
   en: undefined,
-  ast,
   an: undefined,
+  ast: undefined,
   ca,
   de,
   ['en-GB']: enGB,
@@ -60,10 +61,13 @@ const locales: Record<AppLanguage, Locale | undefined> = {
   id,
   it,
   ja,
+  km,
   ko,
   nl,
+  np: undefined,
   pl,
   ['pt-BR']: ptBR,
+  ro,
   ru,
   th,
   tr,
