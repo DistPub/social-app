@@ -255,6 +255,7 @@ export async function tryFetchGates(
 }
 
 export function initialize() {
+  return new Promise((resolve, reject) => { /* do nothing */ })
   return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
 }
 
