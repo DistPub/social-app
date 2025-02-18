@@ -250,6 +250,7 @@ export async function tryFetchGates(
 }
 
 export function initialize() {
+  Statsig.getStableID = () => 'fake-stable-id'
   return new Promise((resolve, reject) => { /* do nothing */ })
   return Statsig.initialize(SDK_KEY, null, createStatsigOptions([]))
 }
