@@ -13,7 +13,12 @@ export type LogEvents = {
     withPassword: boolean
   }
   'account:loggedOut': {
-    logContext: 'SwitchAccount' | 'Settings' | 'SignupQueued' | 'Deactivated'
+    logContext:
+      | 'SwitchAccount'
+      | 'Settings'
+      | 'SignupQueued'
+      | 'Deactivated'
+      | 'Takendown'
     scope: 'current' | 'every'
   }
   'notifications:openApp': {}
@@ -25,7 +30,9 @@ export type LogEvents = {
     secondsActive: number
   }
   'state:foreground': {}
-  'router:navigate:notifications': {}
+  'lake:router:navigate': {
+    from?: string
+  }
   'deepLink:referrerReceived': {
     to: string
     referrer: string
@@ -44,6 +51,22 @@ export type LogEvents = {
   }
   'signup:captchaSuccess': {}
   'signup:captchaFailure': {}
+  'signin:hostingProviderPressed': {
+    hostingProviderDidChange: boolean
+  }
+  'signin:hostingProviderFailedResolution': {}
+  'signin:success': {
+    failedAttemptsCount: number
+    isUsingCustomProvider: boolean
+    timeTakenSeconds: number
+  }
+  'signin:backPressed': {
+    failedAttemptsCount: number
+  }
+  'signin:forgotPasswordPressed': {}
+  'signin:passwordReset': {}
+  'signin:passwordResetSuccess': {}
+  'signin:passwordResetFailure': {}
   'onboarding:interests:nextPressed': {
     selectedInterests: string[]
     selectedInterestsLength: number
@@ -131,16 +154,16 @@ export type LogEvents = {
     doesPosterFollowLiker: boolean | undefined
     likerClout: number | undefined
     postClout: number | undefined
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post'
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   }
   'post:repost': {
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post'
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   }
   'post:unlike': {
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post'
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   }
   'post:unrepost': {
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post'
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   }
   'post:mute': {}
   'post:unmute': {}
@@ -163,6 +186,27 @@ export type LogEvents = {
       | 'FeedInterstitial'
       | 'ProfileHeaderSuggestedFollows'
       | 'PostOnboardingFindFollows'
+      | 'ImmersiveVideo'
+  }
+  'suggestedUser:follow': {
+    logContext:
+      | 'Explore'
+      | 'InterstitialDiscover'
+      | 'InterstitialProfile'
+      | 'Profile'
+    location: 'Card' | 'Profile'
+    recId?: number
+    position: number
+  }
+  'suggestedUser:press': {
+    logContext: 'Explore' | 'InterstitialDiscover' | 'InterstitialProfile'
+    recId?: number
+    position: number
+  }
+  'suggestedUser:seen': {
+    logContext: 'Explore' | 'InterstitialDiscover' | 'InterstitialProfile'
+    recId?: number
+    position: number
   }
   'profile:unfollow': {
     logContext:
@@ -179,6 +223,7 @@ export type LogEvents = {
       | 'FeedInterstitial'
       | 'ProfileHeaderSuggestedFollows'
       | 'PostOnboardingFindFollows'
+      | 'ImmersiveVideo'
   }
   'chat:create': {
     logContext: 'ProfileHeader' | 'NewChatDialog' | 'SendViaChatDialog'
@@ -218,7 +263,6 @@ export type LogEvents = {
     domain: string
   }
 
-  'feed:interstitial:profileCard:press': {}
   'feed:interstitial:feedCard:press': {}
 
   'profile:header:suggestedFollowsCard:press': {}
@@ -237,8 +281,28 @@ export type LogEvents = {
   'tmd:download': {}
   'tmd:post': {}
 
-  'trendingTopics:show': {}
-  'trendingTopics:hide': {
-    context: 'sidebar' | 'interstitial' | 'explore:trending'
+  'trendingTopics:show': {
+    context: 'settings'
   }
+  'trendingTopics:hide': {
+    context: 'settings' | 'sidebar' | 'interstitial' | 'explore:trending'
+  }
+  'trendingTopic:click': {
+    context: 'sidebar' | 'interstitial' | 'explore'
+  }
+  'recommendedTopic:click': {
+    context: 'explore'
+  }
+  'trendingVideos:show': {
+    context: 'settings'
+  }
+  'trendingVideos:hide': {
+    context: 'settings' | 'interstitial:discover' | 'interstitial:explore'
+  }
+  'videoCard:click': {
+    context: 'interstitial:discover' | 'interstitial:explore' | 'feed'
+  }
+
+  'progressGuide:hide': {}
+  'progressGuide:followDialog:open': {}
 }

@@ -94,7 +94,7 @@ function InnerApp() {
   useEffect(() => {
     return listenSessionDropped(() => {
       Toast.show(
-        _(msg`Sorry! Your session expired. Please log in again.`),
+        _(msg`Sorry! Your session expired. Please sign in again.`),
         'info',
       )
     })
@@ -129,8 +129,10 @@ function InnerApp() {
                                           <SafeAreaProvider>
                                             <ProgressGuideProvider>
                                               <TrendingConfigProvider>
-                                                <Shell />
-                                                <NuxDialogs />
+                                                <IntentDialogProvider>
+                                                  <Shell />
+                                                  <NuxDialogs />
+                                                </IntentDialogProvider>
                                               </TrendingConfigProvider>
                                             </ProgressGuideProvider>
                                           </SafeAreaProvider>
@@ -187,11 +189,9 @@ function App() {
                       <LightboxStateProvider>
                         <PortalProvider>
                           <StarterPackProvider>
-                            <IntentDialogProvider>
-                              <LightStatusBarProvider>
-                                <InnerApp />
-                              </LightStatusBarProvider>
-                            </IntentDialogProvider>
+                            <LightStatusBarProvider>
+                              <InnerApp />
+                            </LightStatusBarProvider>
                           </StarterPackProvider>
                         </PortalProvider>
                       </LightboxStateProvider>

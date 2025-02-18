@@ -3,6 +3,7 @@ import {useLingui} from '@lingui/react'
 import {NativeStackScreenProps} from '@react-navigation/native-stack'
 
 import {CommonNavigatorParams} from '#/lib/routes/types'
+import {logEvent} from '#/lib/statsig/statsig'
 import {isNative} from '#/platform/detection'
 import {useAutoplayDisabled, useSetAutoplayDisabled} from '#/state/preferences'
 import {
@@ -36,8 +37,9 @@ export function ContentAndMediaSettingsScreen({}: Props) {
   const inAppBrowserPref = useInAppBrowser()
   const setUseInAppBrowser = useSetInAppBrowser()
   const {enabled: trendingEnabled} = useTrendingConfig()
-  const {trendingDisabled} = useTrendingSettings()
-  const {setTrendingDisabled} = useTrendingSettingsApi()
+  const {trendingDisabled, trendingVideoDisabled} = useTrendingSettings()
+  const {setTrendingDisabled, setTrendingVideoDisabled} =
+    useTrendingSettingsApi()
 
   return (
     <Layout.Screen>
@@ -120,11 +122,40 @@ export function ContentAndMediaSettingsScreen({}: Props) {
                 name="show_trending_topics"
                 label={_(msg`Enable trending topics`)}
                 value={!trendingDisabled}
-                onChange={value => setTrendingDisabled(!value)}>
+                onChange={value => {
+                  const hide = Boolean(!value)
+                  if (hide) {
+                    logEvent('trendingTopics:hide', {context: 'settings'})
+                  } else {
+                    logEvent('trendingTopics:show', {context: 'settings'})
+                  }
+                  setTrendingDisabled(hide)
+                }}>
                 <SettingsList.Item>
                   <SettingsList.ItemIcon icon={Graph} />
                   <SettingsList.ItemText>
                     <Trans>Enable trending topics</Trans>
+                  </SettingsList.ItemText>
+                  <Toggle.Platform />
+                </SettingsList.Item>
+              </Toggle.Item>
+              <Toggle.Item
+                name="show_trending_videos"
+                label={_(msg`Enable trending videos in your Discover feed.`)}
+                value={!trendingVideoDisabled}
+                onChange={value => {
+                  const hide = Boolean(!value)
+                  if (hide) {
+                    logEvent('trendingVideos:hide', {context: 'settings'})
+                  } else {
+                    logEvent('trendingVideos:show', {context: 'settings'})
+                  }
+                  setTrendingVideoDisabled(hide)
+                }}>
+                <SettingsList.Item>
+                  <SettingsList.ItemIcon icon={Graph} />
+                  <SettingsList.ItemText>
+                    <Trans>Enable trending videos in your Discover feed</Trans>
                   </SettingsList.ItemText>
                   <Toggle.Platform />
                 </SettingsList.Item>

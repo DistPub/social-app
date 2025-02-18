@@ -1,5 +1,5 @@
 import {createContext, useCallback, useContext} from 'react'
-import {GestureResponderEvent, View} from 'react-native'
+import {GestureResponderEvent, Keyboard, View} from 'react-native'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
@@ -122,7 +122,11 @@ export function BackButton({onPress, style, ...props}: Partial<ButtonProps>) {
         shape="square"
         onPress={onPressBack}
         hitSlop={HITSLOP_30}
-        style={[{marginLeft: -BUTTON_VISUAL_ALIGNMENT_OFFSET}, style]}
+        style={[
+          {marginLeft: -BUTTON_VISUAL_ALIGNMENT_OFFSET},
+          a.bg_transparent,
+          style,
+        ]}
         {...props}>
         <ButtonIcon icon={ArrowLeft} size="lg" />
       </Button>
@@ -136,6 +140,7 @@ export function MenuButton() {
   const {gtMobile} = useBreakpoints()
 
   const onPress = useCallback(() => {
+    Keyboard.dismiss()
     setDrawerOpen(true)
   }, [setDrawerOpen])
 

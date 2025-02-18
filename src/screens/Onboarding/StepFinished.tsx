@@ -12,6 +12,7 @@ import {
   BSKY_APP_ACCOUNT_DID,
   DISCOVER_SAVED_FEED,
   TIMELINE_SAVED_FEED,
+  VIDEO_SAVED_FEED,
 } from '#/lib/constants'
 import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
 import {logEvent, useGate} from '#/lib/statsig/statsig'
@@ -111,6 +112,12 @@ export function StepFinished() {
               id: TID.nextStr(),
             },
           ]
+          if (gate('onboarding_add_video_feed')) {
+            feedsToSave.push({
+              ...VIDEO_SAVED_FEED,
+              id: TID.nextStr(),
+            })
+          }
 
           // Any starter pack feeds will be pinned _after_ the defaults
           if (starterPack && starterPack.feeds?.length) {
@@ -192,7 +199,7 @@ export function StepFinished() {
     setActiveStarterPack(undefined)
     setHasCheckedForStarterPack(true)
     startProgressGuide(
-      gate('new_postonboarding') ? 'follow-10' : 'like-10-and-follow-7',
+      gate('old_postonboarding') ? 'like-10-and-follow-7' : 'follow-10',
     )
     dispatch({type: 'finish'})
     onboardDispatch({type: 'finish'})

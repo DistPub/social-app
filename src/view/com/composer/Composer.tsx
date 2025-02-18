@@ -83,6 +83,7 @@ import {
   useLanguagePrefs,
   useLanguagePrefsApi,
 } from '#/state/preferences/languages'
+import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
 import {Gif} from '#/state/queries/tenor'
 import {useAgent, useSession} from '#/state/session'
@@ -169,6 +170,7 @@ export const ComposePost = ({
   const discardPromptControl = Prompt.usePromptControl()
   const {closeAllDialogs} = useDialogStateControlContext()
   const {closeAllModals} = useModalControls()
+  const {data: preferences} = usePreferencesQuery()
 
   const [isKeyboardVisible] = useIsKeyboardVisible({iosUseWillEvents: true})
   const [isPublishing, setIsPublishing] = useState(false)
@@ -177,7 +179,13 @@ export const ComposePost = ({
 
   const [composerState, composerDispatch] = useReducer(
     composerReducer,
-    {initImageUris, initQuoteUri: initQuote?.uri, initText, initMention},
+    {
+      initImageUris,
+      initQuoteUri: initQuote?.uri,
+      initText,
+      initMention,
+      initInteractionSettings: preferences?.postInteractionSettings,
+    },
     createComposerState,
   )
 
@@ -264,7 +272,14 @@ export const ComposePost = ({
     () => ({
       paddingTop: isAndroid ? insets.top : 0,
       paddingBottom:
-        isAndroid || (isIOS && !isKeyboardVisible) ? insets.bottom : 0,
+        // iOS - when keyboard is closed, keep the bottom bar in the safe area
+        (isIOS && !isKeyboardVisible) ||
+        // Android - Android >=35 KeyboardAvoidingView adds double padding when
+        // keyboard is closed, so we subtract that in the offset and add it back
+        // here when the keyboard is open
+        (isAndroid && isKeyboardVisible)
+          ? insets.bottom
+          : 0,
     }),
     [insets, isKeyboardVisible],
   )
@@ -530,7 +545,14 @@ export const ComposePost = ({
   }
 
   const onEmojiButtonPress = useCallback(() => {
-    openEmojiPicker?.(textInput.current?.getCursorPosition())
+    const rect = textInput.current?.getCursorPosition()
+    if (rect) {
+      openEmojiPicker?.({
+        ...rect,
+        nextFocusRef:
+          textInput as unknown as React.MutableRefObject<HTMLElement>,
+      })
+    }
   }, [openEmojiPicker])
 
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>()
@@ -635,7 +657,7 @@ export const ComposePost = ({
             ref={scrollViewRef}
             layout={native(LinearTransition)}
             onScroll={scrollHandler}
-            style={styles.scrollView}
+            style={a.flex_1}
             keyboardShouldPersistTaps="always"
             onContentSizeChange={onScrollViewContentSizeChange}
             onLayout={onScrollViewLayout}>
@@ -1219,7 +1241,7 @@ function ComposerFooter({
                 onPress={onEmojiButtonPress}
                 style={a.p_sm}
                 label={_(msg`Open emoji picker`)}
-                accessibilityHint={_(msg`Open emoji picker`)}
+                accessibilityHint={_(msg`Opens emoji picker`)}
                 variant="ghost"
                 shape="round"
                 color="primary">
@@ -1389,10 +1411,14 @@ function useScrollTracker({
 }
 
 function useKeyboardVerticalOffset() {
-  const {top} = useSafeAreaInsets()
+  const {top, bottom} = useSafeAreaInsets()
 
   // Android etc
-  if (!isIOS) return 0
+  if (!isIOS) {
+    // if Android <35 or web, bottom is 0 anyway. if >=35, this is needed to account
+    // for the edge-to-edge nav bar
+    return bottom * -1
+  }
 
   // iPhone SE
   if (top === 20) return 40
@@ -1481,9 +1507,6 @@ const styles = StyleSheet.create({
   },
   inactivePost: {
     opacity: 0.5,
-  },
-  scrollView: {
-    flex: 1,
   },
   textInputLayout: {
     flexDirection: 'row',
