@@ -46,7 +46,7 @@ export {uploadBlob}
 
 interface PostOpts {
   thread: ThreadDraft
-  replyTo?: string
+  replyTo?: string | any
   onStateChange?: (state: string) => void
   langs?: string[]
 }
@@ -207,8 +207,11 @@ async function resolveRT(agent: BskyAgent, richtext: RichText) {
   return rt
 }
 
-async function resolveReply(agent: BskyAgent, replyTo: string) {
-  const replyToUrip = new AtUri(replyTo)
+async function resolveReply(agent: BskyAgent, replyTo: string | any) {
+  if (typeof replyTo == 'string')
+    const replyToUrip = new AtUri(replyTo)
+  else
+    const replyToUrip = new AtUri(replyTo.uri)
   const parentPost = await agent.getPost({
     repo: replyToUrip.host,
     rkey: replyToUrip.rkey,
@@ -222,6 +225,8 @@ async function resolveReply(agent: BskyAgent, replyTo: string) {
       root: parentPost.value.reply?.root || parentRef,
       parent: parentRef,
     }
+  } else if (typeof replyTo == 'object') {
+    return {root: replyTo, parent: replyTo}
   }
 }
 
