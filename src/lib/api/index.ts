@@ -215,10 +215,18 @@ async function resolveReply(agent: BskyAgent, replyTo: string | any) {
     atUri = replyTo.uri
   
   const replyToUrip = new AtUri(atUri)
-  const parentPost = await agent.getPost({
-    repo: replyToUrip.host,
-    rkey: replyToUrip.rkey,
-  })
+  let parentPost = null
+  try {
+    parentPost = await agent.getPost({
+      repo: replyToUrip.host,
+      rkey: replyToUrip.rkey,
+    })
+  }  catch (e: any) {
+    if (typeof replyTo == 'object') {
+      return {root: replyTo, parent: replyTo}
+    }
+  }
+  
   if (parentPost) {
     const parentRef = {
       uri: parentPost.uri,
@@ -228,8 +236,6 @@ async function resolveReply(agent: BskyAgent, replyTo: string | any) {
       root: parentPost.value.reply?.root || parentRef,
       parent: parentRef,
     }
-  } else if (typeof replyTo == 'object') {
-    return {root: replyTo, parent: replyTo}
   }
 }
 
