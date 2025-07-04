@@ -208,10 +208,13 @@ async function resolveRT(agent: BskyAgent, richtext: RichText) {
 }
 
 async function resolveReply(agent: BskyAgent, replyTo: string | any) {
+  let atUri = null;
   if (typeof replyTo == 'string')
-    const replyToUrip = new AtUri(replyTo)
+    atUri = replyTo
   else
-    const replyToUrip = new AtUri(replyTo.uri)
+    atUri = replyTo.uri
+  
+  const replyToUrip = new AtUri(atUri)
   const parentPost = await agent.getPost({
     repo: replyToUrip.host,
     rkey: replyToUrip.rkey,
