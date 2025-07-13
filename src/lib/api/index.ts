@@ -63,7 +63,7 @@ export async function post(
     | Promise<AppBskyFeedPost.Record['reply']>
     | AppBskyFeedPost.Record['reply']
     | undefined
-  if (opts.replyTo) {
+  if ((typeof opts.replyTo == 'object' && opts.replyTo.uri) || (typeof opts.replyTo == 'string' && opts.replyTo)) {
     // Not awaited to avoid waterfalls.
     replyPromise = resolveReply(agent, opts.replyTo)
   }
