@@ -203,7 +203,7 @@ let ProfileHeaderStandard = ({
                 </ButtonText>
               </Button>
             )
-          ) : !profile.viewer?.blockedBy ? (
+          ) : (!profile.viewer?.blockedBy || profile.viewer?.following) ? (
             <>
               {hasSession && <MessageProfileButton profile={profile} />}
 
@@ -243,7 +243,7 @@ let ProfileHeaderStandard = ({
           <ProfileHeaderDisplayName profile={profile} moderation={moderation} />
           <ProfileHeaderHandle profile={profile} />
         </View>
-        {!isPlaceholderProfile && !isBlockedUser && (
+        {!isPlaceholderProfile && (
           <View style={a.gap_md}>
             <ProfileHeaderMetrics profile={profile} />
             {descriptionRT && !moderation.ui('profileView').blur ? (
@@ -260,7 +260,6 @@ let ProfileHeaderStandard = ({
             ) : undefined}
 
             {!isMe &&
-              !isBlockedUser &&
               shouldShowKnownFollowers(profile.viewer?.knownFollowers) && (
                 <View style={[a.flex_row, a.align_center, a.gap_sm]}>
                   <KnownFollowers
