@@ -41,20 +41,22 @@ export function useProfileFeedgensQuery(
     getNextPageParam: lastPage => lastPage.cursor,
     enabled,
     select(data) {
-      return {
-        ...data,
-        pages: data.pages.map(page => {
-          return {
-            ...page,
-            feeds: page.feeds
-              // filter by labels
-              .filter(list => {
-                const decision = moderateFeedGenerator(list, moderationOpts!)
-                return !decision.ui('contentList').filter
-              }),
-          }
-        }),
-      }
+      return data
+      // contentlist no info view, skip filter, direct show
+      // return {
+      //   ...data,
+      //   pages: data.pages.map(page => {
+      //     return {
+      //       ...page,
+      //       feeds: page.feeds
+      //         // filter by labels
+      //         .filter(list => {
+      //           const decision = moderateFeedGenerator(list, moderationOpts!)
+      //           return !decision.ui('contentList').filter
+      //         }),
+      //     }
+      //   }),
+      // }
     },
   })
 }
