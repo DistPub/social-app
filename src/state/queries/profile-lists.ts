@@ -35,18 +35,20 @@ export function useProfileListsQuery(did: string, opts?: {enabled?: boolean}) {
     getNextPageParam: lastPage => lastPage.cursor,
     enabled,
     select(data) {
-      return {
-        ...data,
-        pages: data.pages.map(page => {
-          return {
-            ...page,
-            lists: page.lists.filter(list => {
-              const decision = moderateUserList(list, moderationOpts!)
-              return !decision.ui('contentList').filter
-            }),
-          }
-        }),
-      }
+      return data
+      // content list no info view, so skip moderate, direct show
+      // return {
+      //   ...data,
+      //   pages: data.pages.map(page => {
+      //     return {
+      //       ...page,
+      //       lists: page.lists.filter(list => {
+      //         const decision = moderateUserList(list, moderationOpts!)
+      //         return !decision.ui('contentList').filter
+      //       }),
+      //     }
+      //   }),
+      // }
     },
   })
 }
