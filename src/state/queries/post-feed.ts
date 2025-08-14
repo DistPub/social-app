@@ -123,13 +123,14 @@ const MIN_POSTS = 30
 export function usePostFeedQuery(
   feedDesc: FeedDescriptor,
   params?: FeedParams,
-  opts?: {enabled?: boolean; ignoreFilterFor?: string},
+  opts?: {enabled?: boolean; ignoreFilterFor?: string; enableFilter?: boolean},
 ) {
   const feedTuners = useFeedTuners(feedDesc)
   const moderationOpts = useModerationOpts()
   const {data: preferences} = usePreferencesQuery()
   const enabled =
     opts?.enabled !== false && Boolean(moderationOpts) && Boolean(preferences)
+  const enableFilter = opts?.enableFilter !== false ? true : false
   const userInterests = aggregateUserInterests(preferences)
   const followingPinnedIndex =
     preferences?.savedFeeds?.findIndex(
@@ -158,8 +159,9 @@ export function usePostFeedQuery(
       moderationOpts,
       ignoreFilterFor: opts?.ignoreFilterFor,
       isDiscover,
+      enableFilter,
     }),
-    [feedTuners, moderationOpts, opts?.ignoreFilterFor, isDiscover],
+    [feedTuners, moderationOpts, opts?.ignoreFilterFor, isDiscover, enableFilter],
   )
 
   const query = useInfiniteQuery<
@@ -238,7 +240,7 @@ export function usePostFeedQuery(
       (data: InfiniteData<FeedPageUnselected, RQPageParam>) => {
         // If the selection depends on some data, that data should
         // be included in the selectArgs object and read here.
-        const {feedTuners, moderationOpts, ignoreFilterFor, isDiscover} =
+        const {feedTuners, moderationOpts, ignoreFilterFor, isDiscover, enableFilter} =
           selectArgs
 
         const tuner = new FeedTuner(feedTuners)
@@ -293,6 +295,7 @@ export function usePostFeedQuery(
                   )
 
                   // apply moderation filter
+                  if (enableFilter) {
                   for (let i = 0; i < slice.items.length; i++) {
                     const ignoreFilter =
                       slice.items[i].post.author.did === ignoreFilterFor
@@ -308,6 +311,7 @@ export function usePostFeedQuery(
                     ) {
                       return undefined
                     }
+                  }
                   }
 
                   if (isDiscover) {

@@ -205,6 +205,7 @@ function ProfileListScreenLoaded({
     return <Header rkey={rkey} list={list} preferences={preferences} />
   }, [rkey, list, preferences])
 
+  const enableFilter = isCurateList ? true : false
   const content = <>
     <View style={s.hContentRegion}>
       <PagerWithHeader
@@ -221,6 +222,7 @@ function ProfileListScreenLoaded({
             isFocused={isScreenFocused && isFocused}
             isOwner={isOwner}
             onPressAddUser={onPressAddUser}
+            enableFilter={enableFilter}
           />
         )}
         {({headerHeight, scrollElRef}) => (
@@ -249,19 +251,16 @@ function ProfileListScreenLoaded({
       />
     </View>
   </>
-  if (isCurateList) {
-    return (
-      <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
-        <Hider.Mask>
-          <ListHiddenScreen list={list} preferences={preferences} />
-        </Hider.Mask>
-        <Hider.Content>
-          {content}
-        </Hider.Content>
-      </Hider.Outer>
-    )
-  }
-  return content
+  return (
+    <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
+      <Hider.Mask>
+        <ListHiddenScreen list={list} preferences={preferences} />
+      </Hider.Mask>
+      <Hider.Content>
+        {content}
+      </Hider.Content>
+    </Hider.Outer>
+  )
 }
 
 function Header({
@@ -771,10 +770,11 @@ interface FeedSectionProps {
   isFocused: boolean
   isOwner: boolean
   onPressAddUser: () => void
+  enableFilter: boolean
 }
 const FeedSection = React.forwardRef<SectionRef, FeedSectionProps>(
   function FeedSectionImpl(
-    {feed, scrollElRef, headerHeight, isFocused, isOwner, onPressAddUser},
+    {feed, scrollElRef, headerHeight, isFocused, isOwner, onPressAddUser, enableFilter},
     ref,
   ) {
     const queryClient = useQueryClient()
