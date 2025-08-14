@@ -205,91 +205,63 @@ function ProfileListScreenLoaded({
     return <Header rkey={rkey} list={list} preferences={preferences} />
   }, [rkey, list, preferences])
 
-  if (isCurateList || true) {
+  const content = <>
+    <View style={s.hContentRegion}>
+      <PagerWithHeader
+        items={SECTION_TITLES_CURATE}
+        isHeaderReady={true}
+        renderHeader={renderHeader}
+        onCurrentPageSelected={onCurrentPageSelected}>
+        {({headerHeight, scrollElRef, isFocused}) => (
+          <FeedSection
+            ref={feedSectionRef}
+            feed={`list|${uri}`}
+            scrollElRef={scrollElRef as ListRef}
+            headerHeight={headerHeight}
+            isFocused={isScreenFocused && isFocused}
+            isOwner={isOwner}
+            onPressAddUser={onPressAddUser}
+          />
+        )}
+        {({headerHeight, scrollElRef}) => (
+          <AboutSection
+            ref={aboutSectionRef}
+            scrollElRef={scrollElRef as ListRef}
+            list={list}
+            onPressAddUser={onPressAddUser}
+            headerHeight={headerHeight}
+          />
+        )}
+      </PagerWithHeader>
+      <FAB
+        testID="composeFAB"
+        onPress={() => openComposer({})}
+        icon={
+          <ComposeIcon2
+            strokeWidth={1.5}
+            size={29}
+            style={{color: 'white'}}
+          />
+        }
+        accessibilityRole="button"
+        accessibilityLabel={_(msg`New post`)}
+        accessibilityHint=""
+      />
+    </View>
+  </>
+  if (isCurateList) {
     return (
       <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
         <Hider.Mask>
           <ListHiddenScreen list={list} preferences={preferences} />
         </Hider.Mask>
         <Hider.Content>
-          <View style={s.hContentRegion}>
-            <PagerWithHeader
-              items={SECTION_TITLES_CURATE}
-              isHeaderReady={true}
-              renderHeader={renderHeader}
-              onCurrentPageSelected={onCurrentPageSelected}>
-              {({headerHeight, scrollElRef, isFocused}) => (
-                <FeedSection
-                  ref={feedSectionRef}
-                  feed={`list|${uri}`}
-                  scrollElRef={scrollElRef as ListRef}
-                  headerHeight={headerHeight}
-                  isFocused={isScreenFocused && isFocused}
-                  isOwner={isOwner}
-                  onPressAddUser={onPressAddUser}
-                />
-              )}
-              {({headerHeight, scrollElRef}) => (
-                <AboutSection
-                  ref={aboutSectionRef}
-                  scrollElRef={scrollElRef as ListRef}
-                  list={list}
-                  onPressAddUser={onPressAddUser}
-                  headerHeight={headerHeight}
-                />
-              )}
-            </PagerWithHeader>
-            <FAB
-              testID="composeFAB"
-              onPress={() => openComposer({})}
-              icon={
-                <ComposeIcon2
-                  strokeWidth={1.5}
-                  size={29}
-                  style={{color: 'white'}}
-                />
-              }
-              accessibilityRole="button"
-              accessibilityLabel={_(msg`New post`)}
-              accessibilityHint=""
-            />
-          </View>
+          {content}
         </Hider.Content>
       </Hider.Outer>
     )
   }
-  return (
-    <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
-      <Hider.Mask>
-        <ListHiddenScreen list={list} preferences={preferences} />
-      </Hider.Mask>
-      <Hider.Content>
-        <View style={s.hContentRegion}>
-          <Layout.Center>{renderHeader()}</Layout.Center>
-          <AboutSection
-            list={list}
-            scrollElRef={scrollElRef as ListRef}
-            onPressAddUser={onPressAddUser}
-            headerHeight={0}
-          />
-          <FAB
-            testID="composeFAB"
-            onPress={() => openComposer({})}
-            icon={
-              <ComposeIcon2
-                strokeWidth={1.5}
-                size={29}
-                style={{color: 'white'}}
-              />
-            }
-            accessibilityRole="button"
-            accessibilityLabel={_(msg`New post`)}
-            accessibilityHint=""
-          />
-        </View>
-      </Hider.Content>
-    </Hider.Outer>
-  )
+  return content
 }
 
 function Header({
