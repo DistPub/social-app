@@ -836,6 +836,7 @@ const FeedSection = React.forwardRef<SectionRef, FeedSectionProps>(
           onScrolledDownChange={setIsScrolledDown}
           renderEmptyState={renderPostsEmpty}
           headerOffset={headerHeight}
+          enableFilter={enableFilter}
         />
         {(isScrolledDown || hasNew) && (
           <LoadLatestBtn
