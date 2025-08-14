@@ -205,7 +205,7 @@ function ProfileListScreenLoaded({
     return <Header rkey={rkey} list={list} preferences={preferences} />
   }, [rkey, list, preferences])
 
-  if (isCurateList) {
+  if (isCurateList || true) {
     return (
       <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
         <Hider.Mask>
