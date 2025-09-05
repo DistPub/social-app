@@ -202,52 +202,6 @@ function ProfileListScreenLoaded({
     return <Header rkey={rkey} list={list} preferences={preferences} />
   }, [rkey, list, preferences])
 
-  const enableFilter = isCurateList ? true : false
-  const content = <>
-    <View style={s.hContentRegion}>
-      <PagerWithHeader
-        items={SECTION_TITLES_CURATE}
-        isHeaderReady={true}
-        renderHeader={renderHeader}
-        onCurrentPageSelected={onCurrentPageSelected}>
-        {({headerHeight, scrollElRef, isFocused}) => (
-          <FeedSection
-            ref={feedSectionRef}
-            feed={`list|${uri}`}
-            scrollElRef={scrollElRef as ListRef}
-            headerHeight={headerHeight}
-            isFocused={isScreenFocused && isFocused}
-            isOwner={isOwner}
-            onPressAddUser={onPressAddUser}
-            enableFilter={enableFilter}
-          />
-        )}
-        {({headerHeight, scrollElRef}) => (
-          <AboutSection
-            ref={aboutSectionRef}
-            scrollElRef={scrollElRef as ListRef}
-            list={list}
-            onPressAddUser={onPressAddUser}
-            headerHeight={headerHeight}
-          />
-        )}
-      </PagerWithHeader>
-      <FAB
-        testID="composeFAB"
-        onPress={() => openComposer({})}
-        icon={
-          <ComposeIcon2
-            strokeWidth={1.5}
-            size={29}
-            style={{color: 'white'}}
-          />
-        }
-        accessibilityRole="button"
-        accessibilityLabel={_(msg`New post`)}
-        accessibilityHint=""
-      />
-    </View>
-  </>
   if (isCurateList) {
     return (
       <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
