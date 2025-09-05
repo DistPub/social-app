@@ -24,7 +24,7 @@ const DEFAULT_AGE_ASSURANCE_STATE: AppBskyUnspeccedDefs.AgeAssuranceState = {
 
 const AgeAssuranceContext = createContext<AgeAssuranceContextType>({
   status: 'unknown',
-  isReady: false,
+  isReady: true,
   lastInitiatedAt: undefined,
   isAgeRestricted: false,
 })
