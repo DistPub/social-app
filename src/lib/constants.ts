@@ -219,6 +219,10 @@ export function setBlueskyProxyHeader(header: ProxyHeaderValue) {
   BLUESKY_PROXY_HEADER = header
 }
 
+export const FATESKY_SERVICE_HEADERS = {
+  'atproto-proxy': 'did:web:fatesky.hukoubook.com#fatesky_appview'
+}
+
 export const BLUESKY_SERVICE_HEADERS = {
   'atproto-proxy': BLUESKY_PROXY_HEADER,
 }
