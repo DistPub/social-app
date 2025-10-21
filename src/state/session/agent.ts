@@ -282,7 +282,7 @@ class BskyAppAgent extends BskyAgent {
     super({
       service,
       async fetch(...args) {
-        console.log(args)
+        globalThis.console.log(args)
         let success = false
         try {
           const result = await realFetch(...args)
