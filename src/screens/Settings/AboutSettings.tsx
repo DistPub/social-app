@@ -1,5 +1,5 @@
 import {useMemo} from 'react'
-import {Platform} from 'react-native'
+import {Platform, View} from 'react-native'
 import {setStringAsync} from 'expo-clipboard'
 import * as FileSystem from 'expo-file-system'
 import {Image} from 'expo-image'
@@ -9,7 +9,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {useMutation} from '@tanstack/react-query'
 import {Statsig} from 'statsig-react-native-expo'
 
-import {STATUS_PAGE_URL} from '#/lib/constants'
+import {STATUS_PAGE_URL, FATESKY_SUPPORT_XRPC_LXM} from '#/lib/constants'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {isAndroid, isIOS, isNative} from '#/platform/detection'
 import * as Toast from '#/view/com/util/Toast'
@@ -26,6 +26,8 @@ import * as env from '#/env'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 import {OTAInfo} from './components/OTAInfo'
+import * as Admonition from '#/components/Admonition'
+import {atoms as a} from '#/alf'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'AboutSettings'>
 export function AboutSettingsScreen({}: Props) {
@@ -181,6 +183,22 @@ export function AboutSettingsScreen({}: Props) {
               )}
             </>
           )}
+          <SettingsList.Divider />
+          <SettingsList.Item>
+            <Admonition.Outer type="tip" style={[a.flex_1]}>
+              <Admonition.Row>
+                <Admonition.Icon />
+                <View style={[a.flex_1, a.gap_sm]}>
+                  <Admonition.Text>
+                    fatesky已支持如下XRPC方法：
+                  </Admonition.Text>
+                  <Admonition.Text>
+                    { `${JSON.stringify(FATESKY_SUPPORT_XRPC_LXM, null, '\t')}` }
+                  </Admonition.Text>
+                </View>
+              </Admonition.Row>
+            </Admonition.Outer>
+          </SettingsList.Item>
         </SettingsList.Container>
       </Layout.Content>
     </Layout.Screen>

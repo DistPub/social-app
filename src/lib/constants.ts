@@ -219,8 +219,26 @@ export function setBlueskyProxyHeader(header: ProxyHeaderValue) {
   BLUESKY_PROXY_HEADER = header
 }
 
-export const FATESKY_SERVICE_HEADERS = {
-  'atproto-proxy': 'did:web:fatesky.hukoubook.com#fatesky_appview'
+export const FATESKY_SUPPORT_XRPC_LXM = [
+  'com.atproto.identity.resolveDid',
+  'app.bsky.actor.getProfile',
+  'com.atproto.identity.resolveHandle',
+  'com.atproto.label.queryLabels',
+  'com.atproto.repo.getRecord',
+  'com.atproto.repo.listRecords',
+  'app.bsky.unspecced.getPostThreadV2',
+]
+export function useFateskyAppview(...args) {
+  const req = new globalThis.Request(...args)
+  const url = new globalThis.URL(req.url)
+  if (url.pathname.startsWith('/xrpc/')) {
+    const lxm = url.pathname.slice('/xrpc/'.length)
+    if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
+      req.headers.set('atproto-proxy', 'did:web:fatesky.hukoubook.com#fatesky_appview')
+      req.headers.set('cf-lucky', 'true')
+    }
+  }
+  return req
 }
 
 export const BLUESKY_SERVICE_HEADERS = {

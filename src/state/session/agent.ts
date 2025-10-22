@@ -19,6 +19,7 @@ import {
   IS_PROD_SERVICE,
   PUBLIC_BSKY_SERVICE,
   TIMELINE_SAVED_FEED,
+  useFateskyAppview,
 } from '#/lib/constants'
 import {tryFetchGates} from '#/lib/statsig/statsig'
 import {getAge} from '#/lib/strings/time'
@@ -282,10 +283,10 @@ class BskyAppAgent extends BskyAgent {
     super({
       service,
       async fetch(...args) {
-        globalThis.console.log(args)
+        const req = useFateskyAppview(...args)
         let success = false
         try {
-          const result = await realFetch(...args)
+          const result = await realFetch(req)
           success = true
           return result
         } catch (e) {
