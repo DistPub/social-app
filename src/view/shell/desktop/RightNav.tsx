@@ -99,31 +99,12 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
         {hasSession && (
           <>
             <InlineLinkText
-              to={FEEDBACK_FORM_URL({
-                email: currentAccount?.email,
-                handle: currentAccount?.handle,
-              })}
+              to="/profile/fatesky-social.hukoubook.com"
               label={_(msg`Feedback`)}>
               {_(msg`Feedback`)}
             </InlineLinkText>
-            {' • '}
           </>
         )}
-        <InlineLinkText
-          to="https://bsky.social/about/support/privacy-policy"
-          label={_(msg`Privacy`)}>
-          {_(msg`Privacy`)}
-        </InlineLinkText>
-        {' • '}
-        <InlineLinkText
-          to="https://bsky.social/about/support/tos"
-          label={_(msg`Terms`)}>
-          {_(msg`Terms`)}
-        </InlineLinkText>
-        {' • '}
-        <InlineLinkText label={_(msg`Help`)} to={HELP_DESK_URL}>
-          {_(msg`Help`)}
-        </InlineLinkText>
       </Text>
 
       {kawaii && (
