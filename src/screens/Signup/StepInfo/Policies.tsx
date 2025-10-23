@@ -67,7 +67,6 @@ export const Policies = ({
             This service has not provided terms of service or a privacy policy.
           </Trans>
         </Admonition>
-        <CommunityGuidelinesNotice />
       </View>
     )
   }
@@ -145,8 +144,6 @@ export const Policies = ({
           </Trans>
         </Admonition>
       ) : undefined}
-
-      <CommunityGuidelinesNotice />
     </View>
   )
 }
