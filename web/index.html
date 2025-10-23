@@ -72,6 +72,12 @@
         min-height: 100%;
         width: 100%;
       }
+      :root {
+        --ios-status-bar: env(safe-area-inset-top);
+      }
+      #root {
+        padding-top: var(--ios-status-bar);
+      }
       #splash {
         position: fixed;
         width: 100px;
