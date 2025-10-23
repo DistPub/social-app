@@ -207,10 +207,10 @@ function ProfileScreenLoaded({
   const hasLabeler = !!profile.associated?.labeler
   const showFiltersTab = hasLabeler
   const showPostsTab = true
-  const showRepliesTab = hasSession
+  const showRepliesTab = true
   const showMediaTab = !hasLabeler
   const showVideosTab = !hasLabeler
-  const showLikesTab = isMe
+  const showLikesTab = true
   const feedGenCount = profile.associated?.feedgens || 0
   const showFeedsTab = isMe || feedGenCount > 0
   const starterPackCount = profile.associated?.starterPacks || 0
