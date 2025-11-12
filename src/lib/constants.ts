@@ -230,6 +230,8 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.feed.getFeed',
   'app.bsky.feed.getTimeline',
   'app.bsky.graph.getLists',
+  "app.bsky.graph.getList",
+  "app.bsky.feed.getListFeed",
 ]
 export function useFateskyAppview(...args) {
   const req = new globalThis.Request(...args)

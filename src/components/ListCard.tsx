@@ -53,7 +53,7 @@ type Props = {
 export function Default(
   props: Props & Omit<LinkProps, 'to' | 'label' | 'children'>,
 ) {
-  const {view, showPinButton} = props
+  const {view} = props
   const moderationOpts = useModerationOpts()
   const moderation = moderationOpts
     ? moderateUserList(view, moderationOpts)
@@ -70,9 +70,7 @@ export function Default(
             purpose={view.purpose}
             modUi={moderation?.ui('contentView')}
           />
-          {showPinButton && view.purpose === CURATELIST && (
             <SaveButton view={view} pin />
-          )}
         </Header>
         <Description description={view.description} />
       </Outer>

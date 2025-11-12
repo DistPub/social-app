@@ -202,7 +202,6 @@ function ProfileListScreenLoaded({
     return <Header rkey={rkey} list={list} preferences={preferences} />
   }, [rkey, list, preferences])
 
-  if (isCurateList) {
     return (
       <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
         <Hider.Mask>
@@ -259,44 +258,6 @@ function ProfileListScreenLoaded({
         </Hider.Content>
       </Hider.Outer>
     )
-  }
-  return (
-    <Hider.Outer modui={moderation.ui('contentView')} allowOverride={isOwner}>
-      <Hider.Mask>
-        <ListHiddenScreen list={list} preferences={preferences} />
-      </Hider.Mask>
-      <Hider.Content>
-        <View style={s.hContentRegion}>
-          <Layout.Center>{renderHeader()}</Layout.Center>
-          <AboutSection
-            list={list}
-            scrollElRef={scrollElRef as ListRef}
-            onPressAddUser={addUserDialogControl.open}
-            headerHeight={0}
-          />
-          <FAB
-            testID="composeFAB"
-            onPress={() => openComposer({})}
-            icon={
-              <ComposeIcon2
-                strokeWidth={1.5}
-                size={29}
-                style={{color: 'white'}}
-              />
-            }
-            accessibilityRole="button"
-            accessibilityLabel={_(msg`New post`)}
-            accessibilityHint=""
-          />
-        </View>
-        <ListAddRemoveUsersDialog
-          control={addUserDialogControl}
-          list={list}
-          onChange={onChangeMembers}
-        />
-      </Hider.Content>
-    </Hider.Outer>
-  )
 }
 
 function Header({
