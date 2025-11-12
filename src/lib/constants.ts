@@ -227,6 +227,8 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'com.atproto.repo.getRecord',
   'com.atproto.repo.listRecords',
   'app.bsky.unspecced.getPostThreadV2',
+  'app.bsky.feed.getFeed',
+  'app.bsky.feed.getTimeline',
 ]
 export function useFateskyAppview(...args) {
   const req = new globalThis.Request(...args)
