@@ -234,6 +234,9 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   "app.bsky.feed.getListFeed",
   "app.bsky.actor.getProfiles",
   "app.bsky.feed.getPostThread",
+  'app.bsky.feed.getLikes',
+  'app.bsky.feed.getRepostedBy',
+  'app.bsky.feed.getQuotes',
 ]
 export function useFateskyAppview(...args) {
   const req = new globalThis.Request(...args)
