@@ -237,6 +237,13 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.feed.getLikes',
   'app.bsky.feed.getRepostedBy',
   'app.bsky.feed.getQuotes',
+  'app.bsky.graph.getFollowers',
+  'app.bsky.graph.getFollows',
+  'app.bsky.feed.getActorLikes',
+  'app.bsky.graph.getActorStarterPacks',
+  'app.bsky.graph.getStarterPack',
+  'app.bsky.feed.getActorFeeds',
+  'app.bsky.feed.getAuthorFeed',
 ]
 export function useFateskyAppview(...args) {
   const req = new globalThis.Request(...args)
