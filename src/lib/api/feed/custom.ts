@@ -10,9 +10,9 @@ import {
   getContentLanguages,
 } from '#/state/preferences/languages'
 import {type FeedAPI, type FeedAPIResponse} from './types'
-import {createBskyTopicsHeader, createFateskyTopicsHeader,isBlueskyOwnedFeed} from './utils'
+import {createFateskyTopicsHeader} from './utils'
 
-const feedDidCache: any = {}
+export const feedDidCache: any = {}
 const didTokenCache: any = {}
 export class CustomFeedAPI implements FeedAPI {
   agent: BskyAgent
