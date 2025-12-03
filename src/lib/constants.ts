@@ -244,15 +244,26 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.graph.getStarterPack',
   'app.bsky.feed.getActorFeeds',
   'app.bsky.feed.getAuthorFeed',
+  'app.bsky.video.getUploadLimits',
+  'app.bsky.video.getJobStatus',
+  'app.bsky.feed.getFeedGenerators',
 ]
 export function useFateskyAppview(...args) {
-  const req = new globalThis.Request(...args)
+  let req = new globalThis.Request(...args)
   const url = new globalThis.URL(req.url)
   if (url.pathname.startsWith('/xrpc/')) {
     const lxm = url.pathname.slice('/xrpc/'.length)
     if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
       req.headers.set('atproto-proxy', 'did:web:fatesky.hukoubook.com#fatesky_appview')
       req.headers.set('cf-lucky', 'true')
+
+      // use fake(discover) feed param for logined user
+      // because PDS will leak feed param to bsky appView
+      if (lxm === 'app.bsky.feed.getFeed' && req.headers.get('authorization')) {
+        url.searchParams.set('xfeed', url.searchParams.get('feed') as string)
+        url.searchParams.set('feed', 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot')
+        req = new globalThis.Request(url, req)
+      }
     }
   }
   return req

@@ -16,6 +16,13 @@ export function createBskyTopicsHeader(userInterests?: string) {
   }
 }
 
+export function createFateskyTopicsHeader(token: string, userInterests?: string) {
+  // use topic header to trans real auth token
+  return {
+    'X-Bsky-Topics': `Bearer ${token},${userInterests || ''}`,
+  }
+}
+
 export function aggregateUserInterests(
   preferences?: UsePreferencesQueryResponse,
 ) {
