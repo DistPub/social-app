@@ -1,6 +1,6 @@
 import {
-  AppBskyFeedDefs,
-  AppBskyFeedGetFeed as GetCustomFeed,
+  type AppBskyFeedDefs,
+  type AppBskyFeedGetFeed as GetCustomFeed,
   BskyAgent,
   jsonStringToLex,
 } from '@atproto/api'
@@ -9,10 +9,11 @@ import {
   getAppLanguageAsContentLanguage,
   getContentLanguages,
 } from '#/state/preferences/languages'
-import {FeedAPI, FeedAPIResponse} from './types'
-import {createBskyTopicsHeader, isBlueskyOwnedFeed, createFateskyTopicsHeader} from './utils'
+import {type FeedAPI, type FeedAPIResponse} from './types'
+import {createBskyTopicsHeader, createFateskyTopicsHeader,isBlueskyOwnedFeed} from './utils'
 
 const feedDidCache: any = {}
+const didTokenCache: any = {}
 export class CustomFeedAPI implements FeedAPI {
   agent: BskyAgent
   params: GetCustomFeed.QueryParams
@@ -65,14 +66,20 @@ export class CustomFeedAPI implements FeedAPI {
     const feedServiceDid = feedDidCache[this.params.feed]
 
     // get token
-    const authRes = await agent.com.atproto.server.getServiceAuth({
-      aud: feedServiceDid,
-      lxm: 'app.bsky.feed.getFeedSkeleton'
-    })
-    if (!authRes.success) {
-      throw Error('get service auth failed')
+    const unixTimeInSeconds = Math.floor(Date.now() / 1000);
+    if (((didTokenCache[feedServiceDid]?.exp ?? 0) - 120) < unixTimeInSeconds) {
+      const exp = unixTimeInSeconds + 3600
+      const authRes = await agent.com.atproto.server.getServiceAuth({
+        aud: feedServiceDid,
+        lxm: 'app.bsky.feed.getFeedSkeleton',
+        exp
+      })
+      if (!authRes.success) {
+        throw Error('get service auth failed')
+      }
+      didTokenCache[feedServiceDid] = { token: authRes.data.token, exp }
     }
-    const token = authRes.data.token
+    const token = didTokenCache[feedServiceDid].token
 
     // fetch feed
     const params = {
