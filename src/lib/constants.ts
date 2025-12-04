@@ -9,7 +9,7 @@ export const LOCAL_DEV_SERVICE =
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
 export const BSKY_SERVICE_DID = 'did:web:bsky.social'
-export const PUBLIC_BSKY_SERVICE = 'https://api.hukoubook.com'
+export const PUBLIC_BSKY_SERVICE = 'https://fatesky.hukoubook.com'
 export const DEFAULT_SERVICE = 'https://network.hukoubook.com'
 const HELP_DESK_LANG = 'en-us'
 export const HELP_DESK_URL = `https://blueskyweb.zendesk.com/hc/${HELP_DESK_LANG}`
@@ -102,7 +102,7 @@ export const POST_IMG_MAX = {
 export const STAGING_LINK_META_PROXY =
   'https://cardyb.staging.bsky.dev/v1/extract?url='
 
-export const PROD_LINK_META_PROXY = 'https://api.hukoubook.com/v1/extract?url='
+export const PROD_LINK_META_PROXY = 'https://fatesky-cdn.hukoubook.com/v1/extract?url='
 
 export function LINK_META_PROXY(serviceUrl: string) {
   if (IS_PROD_SERVICE(serviceUrl)) {
@@ -168,7 +168,7 @@ export const KNOWN_SHUTDOWN_FEEDS = [
   'at://did:plc:wqowuobffl66jv3kpsvo7ak4/app.bsky.feed.generator/the-algorithm', // for you by skygaze
 ]
 
-export const GIF_SERVICE = 'https://api.hukoubook.com'
+export const GIF_SERVICE = 'https://fatesky-cdn.hukoubook.com'
 
 export const GIF_SEARCH = (params: string) =>
   `${GIF_SERVICE}/tenor/v2/search?${params}`
@@ -247,6 +247,7 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.video.getUploadLimits',
   'app.bsky.video.getJobStatus',
   'app.bsky.feed.getFeedGenerators',
+  '_health',
 ]
 export function useFateskyAppview(...args) {
   let req = new globalThis.Request(...args)
