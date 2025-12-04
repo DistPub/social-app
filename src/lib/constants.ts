@@ -248,6 +248,8 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.video.getJobStatus',
   'app.bsky.feed.getFeedGenerators',
   '_health',
+  'app.bsky.labeler.getServices',
+  'app.bsky.unspecced.getConfig',
 ]
 export function useFateskyAppview(...args) {
   let req = new globalThis.Request(...args)
