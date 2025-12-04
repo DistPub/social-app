@@ -96,7 +96,7 @@ export function tenorUrlToBskyGifUrl(tenorUrl: string) {
     return ''
   }
   url.hostname = 't.gifs.bsky.app'
-  return url.href
+  return url.href.replace(url.hostname, 'fatesky-cdn.hukoubook.com/gifs')
 }
 
 export type Gif = {
