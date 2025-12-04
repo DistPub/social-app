@@ -251,7 +251,6 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.labeler.getServices',
   'app.bsky.unspecced.getConfig',
   'app.bsky.actor.searchActorsTypeahead',
-  'app.bsky.feed.searchPosts',
   'app.bsky.actor.searchActors',
   'app.bsky.unspecced.getPopularFeedGenerators',
 ]
