@@ -524,16 +524,7 @@ export function parseTenorGif(urlp: URL):
       playerUri: string
       dimensions: {height: number; width: number}
     } {
-  if (urlp.hostname === 'go.smitechow.com') {
-    urlp.hostname = 'media.tenor.com'
-    urlp.pathname = urlp.pathname.substring('/+x/media.tenor.com'.length)
-  }
-
-  if (urlp.hostname !== 'media.tenor.com') {
-    return {success: false}
-  }
-
-  let [_, id, filename] = urlp.pathname.split('/')
+  let [_, id, filename] = urlp.pathname.slice('/gifs'.length).split('/')
 
   if (!id || !filename) {
     return {success: false}
@@ -569,7 +560,7 @@ export function parseTenorGif(urlp: URL):
 
   return {
     success: true,
-    playerUri: `https://go.smitechow.com/+x/t.gifs.bsky.app/${id}/${filename}`,
+    playerUri: `https://fatesky-cdn.hukoubook.com/gifs/${id}/${filename}`,
     dimensions,
   }
 }
