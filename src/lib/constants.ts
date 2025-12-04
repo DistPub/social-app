@@ -261,7 +261,6 @@ export function useFateskyAppview(...args) {
     const lxm = url.pathname.slice('/xrpc/'.length)
     if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
       req.headers.set('atproto-proxy', 'did:web:fatesky.hukoubook.com#fatesky_appview')
-      req.headers.set('cf-lucky', 'true')
 
       // use fake(discover) feed param for logined user
       // because PDS will leak feed param to bsky appView
