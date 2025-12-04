@@ -67,7 +67,8 @@ export class CustomFeedAPI implements FeedAPI {
 
     // get token
     const unixTimeInSeconds = Math.floor(Date.now() / 1000);
-    if (((didTokenCache[feedServiceDid]?.exp ?? 0) - 120) < unixTimeInSeconds) {
+    const userDidTokenCache: any = didTokenCache[agent.did as string] ?? {}
+    if (((userDidTokenCache[feedServiceDid]?.exp ?? 0) - 120) < unixTimeInSeconds) {
       const exp = unixTimeInSeconds + 3600
       const authRes = await agent.com.atproto.server.getServiceAuth({
         aud: feedServiceDid,
@@ -77,9 +78,10 @@ export class CustomFeedAPI implements FeedAPI {
       if (!authRes.success) {
         throw Error('get service auth failed')
       }
-      didTokenCache[feedServiceDid] = { token: authRes.data.token, exp }
+      userDidTokenCache[feedServiceDid] = { token: authRes.data.token, exp }
+      didTokenCache[agent.did as string] = userDidTokenCache
     }
-    const token = didTokenCache[feedServiceDid].token
+    const token = didTokenCache[agent.did as string][feedServiceDid].token
 
     // fetch feed
     const params = {

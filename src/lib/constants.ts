@@ -253,6 +253,7 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.actor.searchActorsTypeahead',
   'app.bsky.actor.searchActors',
   'app.bsky.unspecced.getPopularFeedGenerators',
+  'app.bsky.feed.getPosts',
 ]
 export function useFateskyAppview(...args) {
   let req = new globalThis.Request(...args)
