@@ -255,9 +255,17 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.unspecced.getPopularFeedGenerators',
   'app.bsky.feed.getPosts',
 ]
+export const HACK_FATESKY_SEARCH_PARAM_LIMIT = [
+  'app.bsky.feed.getTimeline',
+  'app.bsky.feed.getFeed',
+  'app.bsky.feed.getAuthorFeed',
+  'app.bsky.feed.getListFeed',
+  'app.bsky.feed.getActorLikes',
+]
 export function useFateskyAppview(...args) {
   let req = new globalThis.Request(...args)
   const url = new globalThis.URL(req.url)
+  const pageUrl = new globalThis.URL(globalThis.location.href)
   if (url.pathname.startsWith('/xrpc/')) {
     const lxm = url.pathname.slice('/xrpc/'.length)
     if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
@@ -268,6 +276,13 @@ export function useFateskyAppview(...args) {
       if (lxm === 'app.bsky.feed.getFeed' && req.headers.get('authorization')) {
         url.searchParams.set('xfeed', url.searchParams.get('feed') as string)
         url.searchParams.set('feed', 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot')
+        req = new globalThis.Request(url, req)
+      }
+
+      // if feed can't load in pds 40s requirements
+      // you can hack the limit param by set it in page search param
+      if (HACK_FATESKY_SEARCH_PARAM_LIMIT.includes(lxm) && pageUrl.searchParams.get('limit')) {
+        url.searchParams.set('limit', pageUrl.searchParams.get('limit') as string)
         req = new globalThis.Request(url, req)
       }
     }
