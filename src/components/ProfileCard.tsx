@@ -1,6 +1,7 @@
 import {useMemo} from 'react'
 import {type GestureResponderEvent, View} from 'react-native'
 import {
+  AtUri,
   moderateProfile,
   type ModerationOpts,
   RichText as RichTextApi,
@@ -379,8 +380,26 @@ export function Description({
 } & TextStyleProp) {
   const profile = useProfileShadow(profileUnshadowed)
   const rt = useMemo(() => {
-    if (!('description' in profile)) return
-    const rt = new RichTextApi({text: profile.description || ''})
+    const viewer = profile.viewer as any
+    let figs: string[] = []
+    if ('description' in profile) {
+      figs.push(profile.description ?? '')
+    }
+    viewer?.xblocking?.forEach((item: any) => {
+      const uri = new AtUri(item as string)
+      if (uri.rkey === 'block') {
+        figs.unshift(`🔮你已屏蔽→ https://app.hukoubook.com/moderation/blocked-accounts`)
+      } else {
+        figs.unshift(`🔮你已屏蔽→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
+      }
+    })
+    if (viewer?.xblockedBy) {
+      figs.unshift('🔮屏蔽了你')
+    }
+    const text = figs.join('\n')
+    if (text.length===0) return
+
+    const rt = new RichTextApi({text})
     rt.detectFacetsWithoutResolution()
     return rt
   }, [profile])
