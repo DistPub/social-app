@@ -254,6 +254,7 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.actor.searchActors',
   'app.bsky.unspecced.getPopularFeedGenerators',
   'app.bsky.feed.getPosts',
+  'app.bsky.graph.getBlocks',
 ]
 export const HACK_FATESKY_SEARCH_PARAM_LIMIT = [
   'app.bsky.feed.getTimeline',

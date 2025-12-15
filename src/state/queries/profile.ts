@@ -430,12 +430,20 @@ function useProfileUnmuteMutation() {
   })
 }
 
+export function getProfileBlockingUri(profile: any) {
+  const items: any[] = profile.viewer?.xblocking ?? []
+  for (const item of items) {
+    if (item.list.endsWith('/block'))
+      return item.uri as string
+  }
+}
+
 export function useProfileBlockMutationQueue(
   profile: Shadow<bsky.profile.AnyProfileView>,
 ) {
   const queryClient = useQueryClient()
   const did = profile.did
-  const initialBlockingUri = profile.viewer?.blocking
+  const initialBlockingUri = getProfileBlockingUri(profile)
   const blockMutation = useProfileBlockMutation()
   const unblockMutation = useProfileUnblockMutation()
 

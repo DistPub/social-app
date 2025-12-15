@@ -375,11 +375,11 @@ export function getProfileDescription(profile: any, isPage: boolean) {
   let figs: string[] = []
   if (isPage) {
     viewer?.xblockedBy?.forEach((item: any) => {
-      const uri = new AtUri(item as string)
+      const uri = new AtUri(item.list as string)
       figs.push(`🔮屏蔽了你→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
     })
     viewer?.xblocking?.forEach((item: any) => {
-      const uri = new AtUri(item as string)
+      const uri = new AtUri(item.list as string)
       figs.push(`🔮你已屏蔽→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
     })
   } else {

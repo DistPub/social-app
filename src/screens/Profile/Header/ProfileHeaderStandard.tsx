@@ -16,6 +16,7 @@ import {logger} from '#/logger'
 import {isIOS} from '#/platform/detection'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {
+  getProfileBlockingUri,
   useProfileBlockMutationQueue,
   useProfileFollowMutationQueue,
 } from '#/state/queries/profile'
@@ -72,6 +73,7 @@ let ProfileHeaderStandard = ({
     'ProfileHeader',
   )
   const [_queueBlock, queueUnblock] = useProfileBlockMutationQueue(profile)
+  const blocking = getProfileBlockingUri(profile)
   const unblockPromptControl = Prompt.usePromptControl()
   const requireAuth = useRequireAuth()
   const [showSuggestedFollows, setShowSuggestedFollows] = useState(false)
@@ -198,7 +200,7 @@ let ProfileHeaderStandard = ({
                   control={editProfileControl}
                 />
               </>
-            ) : profile.viewer?.blocking ? (
+            ) : blocking ? (
               profile.viewer?.blockingByList ? null : (
                 <Button
                   testID="unblockBtn"
@@ -325,7 +327,7 @@ let ProfileHeaderStandard = ({
           )}
           onConfirm={unblockAccount}
           confirmButtonCta={
-            profile.viewer?.blocking ? _(msg`Unblock`) : _(msg`Block`)
+            blocking ? _(msg`Unblock`) : _(msg`Block`)
           }
           confirmButtonColor="negative"
         />
