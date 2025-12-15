@@ -370,6 +370,30 @@ export function NamePlaceholder({style}: ViewStyleProp) {
   )
 }
 
+export function getProfileDescription(profile: any, isPage: boolean) {
+  const viewer = profile.viewer as any
+  let figs: string[] = []
+  if (isPage) {
+    viewer?.xblockedBy?.forEach((item: any) => {
+      const uri = new AtUri(item as string)
+      figs.push(`🔮屏蔽了你→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
+    })
+    viewer?.xblocking?.forEach((item: any) => {
+      const uri = new AtUri(item as string)
+      figs.push(`🔮你已屏蔽→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
+    })
+  } else {
+    if (viewer?.xblockedBy) {
+      figs.push(`🔮屏蔽了你`)
+    }
+    if (viewer?.xblocking) {
+      figs.push(`🔮你已屏蔽`)
+    }
+  }
+  figs.push(profile.description ?? '')
+  return figs.join('\n')
+}
+
 export function Description({
   profile: profileUnshadowed,
   numberOfLines = 3,
@@ -380,23 +404,7 @@ export function Description({
 } & TextStyleProp) {
   const profile = useProfileShadow(profileUnshadowed)
   const rt = useMemo(() => {
-    const viewer = profile.viewer as any
-    let figs: string[] = []
-    if ('description' in profile) {
-      figs.push(profile.description ?? '')
-    }
-    viewer?.xblocking?.forEach((item: any) => {
-      const uri = new AtUri(item as string)
-      if (uri.rkey === 'block') {
-        figs.unshift(`🔮你已屏蔽→ https://app.hukoubook.com/moderation/blocked-accounts`)
-      } else {
-        figs.unshift(`🔮你已屏蔽→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
-      }
-    })
-    if (viewer?.xblockedBy) {
-      figs.unshift('🔮屏蔽了你')
-    }
-    const text = figs.join('\n')
+    const text = getProfileDescription(profile, false)
     if (text.length===0) return
 
     const rt = new RichTextApi({text})

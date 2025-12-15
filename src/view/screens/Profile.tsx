@@ -44,6 +44,7 @@ import {ProfileLabelsSection} from '#/screens/Profile/Sections/Labels'
 import {atoms as a} from '#/alf'
 import * as Layout from '#/components/Layout'
 import {ScreenHider} from '#/components/moderation/ScreenHider'
+import {getProfileDescription} from '#/components/ProfileCard'
 import {ProfileStarterPacks} from '#/components/StarterPack/ProfileStarterPacks'
 import {navigate} from '#/Navigation'
 import {ExpoScrollForwarderView} from '../../../modules/expo-scroll-forwarder'
@@ -194,7 +195,7 @@ function ProfileScreenLoaded({
 
   useSetTitle(combinedDisplayName(profile))
 
-  const description = profile.description ?? ''
+  const description = getProfileDescription(profile, true)
   const hasDescription = description !== ''
   const [descriptionRT, isResolvingDescriptionRT] = useRichText(description)
   const showPlaceholder = isPlaceholderProfile || isResolvingDescriptionRT

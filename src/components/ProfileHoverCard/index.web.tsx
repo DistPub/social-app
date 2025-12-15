@@ -39,6 +39,7 @@ import {LiveStatus} from '#/components/live/LiveStatusDialog'
 import {Loader} from '#/components/Loader'
 import * as Pills from '#/components/Pills'
 import {Portal} from '#/components/Portal'
+import {getProfileDescription} from '#/components/ProfileCard'
 import {RichText} from '#/components/RichText'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
@@ -429,7 +430,8 @@ function Inner({
     () => moderateProfile(profile, moderationOpts),
     [profile, moderationOpts],
   )
-  const [descriptionRT] = useRichText(profile.description ?? '')
+  const description = getProfileDescription(profile, false)
+  const [descriptionRT] = useRichText(description)
   const profileShadow = useProfileShadow(profile)
   const {follow, unfollow} = useFollowMethods({
     profile: profileShadow,
@@ -579,7 +581,7 @@ function Inner({
             </InlineLinkText>
           </View>
 
-          {profile.description?.trim() && !moderation.ui('profileView').blur ? (
+          {description?.trim() && !moderation.ui('profileView').blur ? (
             <View style={[a.pt_md]}>
               <RichText
                 numberOfLines={8}
