@@ -103,6 +103,11 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
               label={_(msg`Feedback`)}>
               {_(msg`Feedback`)}
             </InlineLinkText>
+            <InlineLinkText
+              to="https://soar.smitechow.com"
+              label={_(msg`💥邀请你试用Soar遨游蓝天`)}>
+              {_(msg`💥邀请你试用Soar遨游蓝天`)}
+            </InlineLinkText>
           </>
         )}
       </Text>

@@ -39,7 +39,6 @@ import {LiveStatus} from '#/components/live/LiveStatusDialog'
 import {Loader} from '#/components/Loader'
 import * as Pills from '#/components/Pills'
 import {Portal} from '#/components/Portal'
-import {getProfileDescription} from '#/components/ProfileCard'
 import {RichText} from '#/components/RichText'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
@@ -430,7 +429,7 @@ function Inner({
     () => moderateProfile(profile, moderationOpts),
     [profile, moderationOpts],
   )
-  const description = getProfileDescription(profile, false)
+  const description = profile.description ?? ''
   const [descriptionRT] = useRichText(description)
   const profileShadow = useProfileShadow(profile)
   const {follow, unfollow} = useFollowMethods({

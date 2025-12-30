@@ -370,30 +370,6 @@ export function NamePlaceholder({style}: ViewStyleProp) {
   )
 }
 
-export function getProfileDescription(profile: any, isPage: boolean) {
-  const viewer = profile.viewer as any
-  let figs: string[] = []
-  if (isPage) {
-    viewer?.xblockedBy?.forEach((item: any) => {
-      const uri = new AtUri(item.list as string)
-      figs.push(`🔮屏蔽了你→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
-    })
-    viewer?.xblocking?.forEach((item: any) => {
-      const uri = new AtUri(item.list as string)
-      figs.push(`🔮你已屏蔽→ https://app.hukoubook.com/profile/${uri.host}/lists/${uri.rkey}`)
-    })
-  } else {
-    if (viewer?.xblockedBy) {
-      figs.push(`🔮屏蔽了你`)
-    }
-    if (viewer?.xblocking) {
-      figs.push(`🔮你已屏蔽`)
-    }
-  }
-  figs.push(profile.description ?? '')
-  return figs.join('\n')
-}
-
 export function Description({
   profile: profileUnshadowed,
   numberOfLines = 3,
@@ -402,9 +378,9 @@ export function Description({
   profile: bsky.profile.AnyProfileView
   numberOfLines?: number
 } & TextStyleProp) {
-  const profile = useProfileShadow(profileUnshadowed)
+  const profile = useProfileShadow(profileUnshadowed) as any
   const rt = useMemo(() => {
-    const text = getProfileDescription(profile, false)
+    const text = profile.description ?? ''
     if (text.length===0) return
 
     const rt = new RichTextApi({text})
