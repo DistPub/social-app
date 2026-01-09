@@ -247,6 +247,7 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.video.getUploadLimits',
   'app.bsky.video.getJobStatus',
   'app.bsky.feed.getFeedGenerators',
+  'app.bsky.feed.getFeedGenerator',
   '_health',
   'app.bsky.labeler.getServices',
   'app.bsky.unspecced.getConfig',
