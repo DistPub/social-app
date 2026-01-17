@@ -1,5 +1,4 @@
 import {View} from 'react-native'
-import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
 import {usePreferencesQuery} from '#/state/queries/preferences'
