@@ -107,13 +107,7 @@ export class CustomFeedAPI implements FeedAPI {
     let res;
 
     if (agent.did) {
-      try {
-        res = await this.getFeedWithFakeTopics(cursor, limit)
-      } catch(error) {
-        return {
-          feed: [],
-        }
-      }
+      res = await this.getFeedWithFakeTopics(cursor, limit)
     } else {
       res = await loggedOutFetch({ ...this.params, cursor, limit })
     }
