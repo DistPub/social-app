@@ -14,6 +14,7 @@ export type CommonNavigatorParams = {
   ModerationBlockedAccounts: undefined
   ModerationInteractionSettings: undefined
   ModerationVerificationSettings: undefined
+  ModerationShortcutTopicBufferBanSettings: undefined
   Settings: undefined
   Profile: {name: string; hideBackButton?: boolean}
   ProfileFollowers: {name: string}

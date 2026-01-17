@@ -80,6 +80,7 @@ import {MessagesConversationScreen} from '#/screens/Messages/Conversation'
 import {MessagesInboxScreen} from '#/screens/Messages/Inbox'
 import {MessagesSettingsScreen} from '#/screens/Messages/Settings'
 import {ModerationScreen} from '#/screens/Moderation'
+import {Screen as ShortcutTopicBufferBanSettings} from '#/screens/Moderation/ShortcutTopicBufferBanSettings'
 import {Screen as ModerationVerificationSettings} from '#/screens/Moderation/VerificationSettings'
 import {Screen as ModerationInteractionSettings} from '#/screens/ModerationInteractionSettings'
 import {NotificationsActivityListScreen} from '#/screens/Notifications/ActivityList'
@@ -204,6 +205,14 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         getComponent={() => ModerationVerificationSettings}
         options={{
           title: title(msg`Verification Settings`),
+          requireAuth: true,
+        }}
+      />
+      <Stack.Screen
+        name="ModerationShortcutTopicBufferBanSettings"
+        getComponent={() => ShortcutTopicBufferBanSettings}
+        options={{
+          title: `中国好声音主题词屏蔽快捷方式`,
           requireAuth: true,
         }}
       />

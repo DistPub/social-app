@@ -321,6 +321,21 @@ export function ModerationScreenInner({
             />
           )}
         </Link>
+        <Divider />
+        <Link
+          label={`管理中国好声音主题词屏蔽快捷方式`}
+          testID="shortcutTopicBufferBanSettingsBtn"
+          to="/moderation/shortcut-topic-buffer-ban-settings">
+          {state => (
+            <SubItem
+              title={`中国好声音主题词屏蔽快捷方式`}
+              icon={CircleCheck}
+              style={[
+                (state.hovered || state.pressed) && [t.atoms.bg_contrast_50],
+              ]}
+            />
+          )}
+        </Link>
       </View>
 
       {declaredAge === undefined && (
