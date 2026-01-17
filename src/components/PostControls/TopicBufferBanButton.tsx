@@ -16,10 +16,14 @@ export const TopicBufferBanButton = memo(function TopicBufferBanButton({
   post,
   big,
   hitSlop,
+  onShowLess,
+  postFeedContext,
 }: {
   post: Shadow<AppBskyFeedDefs.PostView>
   big?: boolean
   hitSlop?: Insets
+  onShowLess?: any
+  postFeedContext?: any
 }): React.ReactNode {
   const {_} = useLingui()
   const agent = useAgent()
@@ -42,11 +46,17 @@ export const TopicBufferBanButton = memo(function TopicBufferBanButton({
           'atproto-proxy': `did:web:cgv.hukoubook.com#atproto_labeler`,
         },
       })
+      if (onShowLess) {
+        onShowLess({
+          item: post.uri,
+          feedContext: postFeedContext,
+        })
+      }
       toast.show(
         <toast.Outer>
           <toast.Icon icon={TrashIcon} />
           <toast.Text>
-            举报成功
+            主题词限定时间范围（前后1小时）屏蔽成功
           </toast.Text>
         </toast.Outer>,
       )

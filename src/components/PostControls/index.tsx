@@ -300,6 +300,8 @@ let PostControls = ({
         { showShortcut && <TopicBufferBanButton
           post={post}
           big={big}
+          onShowLess={onShowLess}
+          postFeedContext={feedContext}
           hitSlop={{
             right: secondaryControlSpacingStyles.gap / 2,
           }}
