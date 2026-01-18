@@ -61,7 +61,7 @@ export function VideoEmbed({
   const [key, setKey] = useState(0)
   const renderError = useCallback(
     (error: unknown) => (
-      <VideoError error={error} retry={() => setKey(key + 1)} />
+      <VideoError error={error} retry={() => setKey(key + 1)} thumb={embed.thumbnail} />
     ),
     [key],
   )
@@ -210,7 +210,7 @@ export const OnlyNearScreen = ({children}: {children: React.ReactNode}) => {
   return nearScreen ? children : null
 }
 
-function VideoError({error, retry}: {error: unknown; retry: () => void}) {
+function VideoError({ error, retry, thumb }: { error: unknown; retry: () => void; thumb?: string}) {
   const {_} = useLingui()
 
   let showRetryButton = true
@@ -228,7 +228,7 @@ function VideoError({error, retry}: {error: unknown; retry: () => void}) {
   }
 
   return (
-    <VideoFallback.Container>
+    <VideoFallback.Container thumb={thumb}>
       <VideoFallback.Text>{text}</VideoFallback.Text>
       {showRetryButton && <VideoFallback.RetryButton onPress={retry} />}
     </VideoFallback.Container>

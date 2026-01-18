@@ -1,4 +1,4 @@
-import {View} from 'react-native'
+import {ImageBackground} from 'react-native'
 import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 import type React from 'react'
@@ -7,10 +7,12 @@ import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text as TypoText} from '#/components/Typography'
 
-export function Container({children}: {children: React.ReactNode}) {
+export function Container({children, thumb}: {children: React.ReactNode, thumb?: string}) {
   const t = useTheme()
   return (
-    <View
+    <ImageBackground
+      source={{uri: thumb}}
+      resizeMode="cover"
       style={[
         a.flex_1,
         t.atoms.bg_contrast_25,
@@ -23,7 +25,7 @@ export function Container({children}: {children: React.ReactNode}) {
         a.gap_lg,
       ]}>
       {children}
-    </View>
+    </ImageBackground>
   )
 }
 
