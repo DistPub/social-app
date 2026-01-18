@@ -12,13 +12,23 @@ export async function readLabelers(did: string): Promise<string[] | undefined> {
   return rawData ? JSON.parse(rawData) : undefined
 }
 
+const cache = new Map();
+
 export async function saveShortcutTopicBufferBan(did: string, value: boolean) {
-  await AsyncStorage.setItem(`shortcut-topic-buffer-ban:${did}`, value ? '1' : '0')
+  const key = `shortcut-topic-buffer-ban:${did}`
+  const val = value ? '1' : '0'
+  // cache promise value
+  cache.set(key, Promise.resolve(value))
+  await AsyncStorage.setItem(key, val)
 }
 
 export async function readShortcutTopicBufferBan(did: string) {
-  const data = await AsyncStorage.getItem(`shortcut-topic-buffer-ban:${did}`)
-  return data === '1'
+  const key = `shortcut-topic-buffer-ban:${did}`
+  if (!cache.has(key)) {
+    cache.set(key, AsyncStorage.getItem(key).then(data => data === '1'))
+  }
+  // return cached promise value
+  return cache.get(key)
 }
 
 export function useShortcutTopicBufferBan(did: string) {

@@ -56,7 +56,7 @@ export const TopicBufferBanButton = memo(function TopicBufferBanButton({
         <toast.Outer>
           <toast.Icon icon={TrashIcon} />
           <toast.Text>
-            主题词限定时间范围（前后1小时）屏蔽成功
+            主题词屏蔽成功
           </toast.Text>
         </toast.Outer>,
       )
