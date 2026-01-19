@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {
   Pressable,
   type StyleProp,
@@ -111,6 +111,24 @@ export function GifEmbed({
     playerRef.current?.toggleAsync()
   }, [])
 
+  const [shown, setShown] = useState(false);
+  const containerRef = useRef<any>(null)
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
   return (
     <View
       style={[
@@ -122,6 +140,7 @@ export function GifEmbed({
         style,
       ]}>
       <View
+        ref={containerRef}
         style={[
           a.absolute,
           /*
@@ -141,7 +160,7 @@ export function GifEmbed({
         />
         <GifView
           source={params.playerUri}
-          placeholderSource={thumb}
+          placeholderSource={shown ? thumb : undefined}
           style={[a.flex_1]}
           autoplay={!autoplayDisabled}
           onPlayerStateChange={onPlayerStateChange}

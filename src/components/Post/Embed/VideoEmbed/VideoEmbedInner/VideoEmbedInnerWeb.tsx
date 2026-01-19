@@ -52,6 +52,23 @@ export function VideoEmbedInnerWeb({
     }
   }, [lastKnownTime])
 
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
   return (
     <View
       style={[a.flex_1, a.rounded_md, a.overflow_hidden]}
@@ -61,7 +78,7 @@ export function VideoEmbedInnerWeb({
         <figure style={{margin: 0, position: 'absolute', inset: 0}}>
           <video
             ref={videoRef}
-            poster={embed.thumbnail}
+            poster={shown ? embed.thumbnail : undefined}
             style={{width: '100%', height: '100%', objectFit: 'contain'}}
             playsInline
             preload="none"

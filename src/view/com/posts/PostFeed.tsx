@@ -874,7 +874,7 @@ let PostFeed = ({
         headerOffset={headerOffset}
         progressViewOffset={progressViewOffset}
         contentContainerStyle={{
-          minHeight: Dimensions.get('window').height * 1.5,
+          minHeight: !isWeb ? Dimensions.get('window').height * 1.5 : undefined,
         }}
         onScrolledDownChange={onScrolledDownChange}
         onEndReached={onEndReached}
@@ -885,7 +885,7 @@ let PostFeed = ({
           desktopFixedHeightOffset ? desktopFixedHeightOffset : true
         }
         initialNumToRender={initialNumToRenderOverride ?? initialNumToRender}
-        windowSize={9}
+        windowSize={isWeb ? 3 : 9}
         maxToRenderPerBatch={isIOS ? 5 : 1}
         updateCellsBatchingPeriod={40}
         onItemSeen={onItemSeen}

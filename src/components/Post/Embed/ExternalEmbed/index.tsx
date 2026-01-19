@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react'
+import React, {useCallback, useEffect, useRef, useState} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 import {Image} from 'expo-image'
 import {type AppBskyEmbedExternal} from '@atproto/api'
@@ -59,6 +59,24 @@ export const ExternalEmbed = ({
     }
   }, [link.uri, playHaptic])
 
+  const [shown, setShown] = useState(false);
+  const containerRef = useRef<any>(null)
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
   if (embedPlayerParams?.source === 'tenor') {
     const parsedAlt = parseAltFromGIFDescription(link.description)
     return (
@@ -83,6 +101,7 @@ export const ExternalEmbed = ({
       onLongPress={onShareExternal}>
       {({hovered}) => (
         <View
+          ref={containerRef}
           style={[
             a.transition_color,
             a.flex_col,
@@ -100,7 +119,7 @@ export const ExternalEmbed = ({
               style={{
                 aspectRatio: 1.91,
               }}
-              source={{uri: imageUri}}
+              source={shown ? {uri: imageUri} : null}
               accessibilityIgnoresInvertColors
             />
           ) : undefined}

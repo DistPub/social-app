@@ -1,4 +1,4 @@
-import React, {useRef} from 'react'
+import React, {useEffect, useRef, useState} from 'react'
 import {type DimensionValue, Pressable, View} from 'react-native'
 import Animated, {
   type AnimatedRef,
@@ -108,12 +108,29 @@ export function AutoSizedImage({
   const isContain = aspectRatio === undefined
   const hasAlt = !!image.alt
 
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
+
   const contents = (
     <Animated.View ref={containerRef} collapsable={false} style={{flex: 1}}>
       <Image
         contentFit={isContain ? 'contain' : 'cover'}
         style={[a.w_full, a.h_full]}
-        source={image.thumb}
+        source={shown ? image.thumb : null}
         accessible={true} // Must set for `accessibilityLabel` to work
         accessibilityIgnoresInvertColors
         accessibilityLabel={image.alt}

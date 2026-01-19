@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react'
 import {Pressable, type StyleProp, View, type ViewStyle} from 'react-native'
 import {type AnimatedRef} from 'react-native-reanimated'
 import {Image, type ImageStyle} from 'expo-image'
@@ -51,6 +52,24 @@ export function GalleryItem({
   const hasAlt = !!image.alt
   const hideBadges =
     viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
+
+  const containerRef = containerRefs[index]
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!(node instanceof HTMLElement)) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 当图片进入或离开视口时自动切换
+        setShown(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // 露出来 10% 执行
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [containerRef]);
   return (
     <View style={a.flex_1} ref={containerRefs[index]} collapsable={false}>
       <Pressable
@@ -71,7 +90,7 @@ export function GalleryItem({
         accessibilityLabel={image.alt || _(msg`Image`)}
         accessibilityHint="">
         <Image
-          source={{uri: image.thumb}}
+          source={shown ? {uri: image.thumb} : null}
           style={[a.flex_1]}
           accessible={true}
           accessibilityLabel={image.alt}
