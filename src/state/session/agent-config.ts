@@ -31,6 +31,30 @@ export async function readShortcutTopicBufferBan(did: string) {
   return cache.get(key)
 }
 
+export const cgvCursorAtUri = { uri: '' }
+const S32_CHAR = '234567abcdefghijklmnopqrstuvwxyz';
+const s32decode = (s) => {
+    let i = 0;
+    for (const c of s) {
+        i = i * 32 + S32_CHAR.indexOf(c);
+    }
+    return i;
+};
+
+export const TIDParse = (tid) => {
+    const timestamp = s32decode(tid.slice(0, 11));
+    const clockid = s32decode(tid.slice(11, 13));
+    return { timestamp: timestamp, clockid: clockid };
+};
+export function useCGVCursorAtUri() {
+  const [state, setState] = useState(cgvCursorAtUri.uri)
+  const set = useCallback((val: string) => {
+    cgvCursorAtUri.uri = val
+    setState(val)
+  },[])
+  return [state, set] as const
+}
+
 export function useShortcutTopicBufferBan(did: string) {
   const [state, setState] = useState(false);
   const [done, setDone] = useState(false);   // 是否完成首次读取

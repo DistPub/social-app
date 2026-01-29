@@ -35,7 +35,8 @@ import {logger} from '#/logger'
 import {useAgeAssuranceContext} from '#/state/ageAssurance'
 import {STALE} from '#/state/queries'
 import {DEFAULT_LOGGED_OUT_PREFERENCES} from '#/state/queries/preferences/const'
-import {useAgent} from '#/state/session'
+import { useAgent } from '#/state/session'
+import {cgvCursorAtUri, TIDParse} from '#/state/session/agent-config'
 import * as userActionHistory from '#/state/userActionHistory'
 import {KnownError} from '#/view/com/posts/PostFeedErrorMessage'
 import {useFeedTuners} from '../preferences/feed-tuners'
@@ -194,6 +195,10 @@ export function usePostFeedQuery(
     queryKey: RQKEY(feedDesc, params),
     async queryFn({pageParam}: {pageParam: RQPageParam}) {
       logger.debug('usePostFeedQuery', {feedDesc, cursor: pageParam?.cursor})
+      let myCursor = undefined
+      if (isDiscover && cgvCursorAtUri.uri !== '') {
+        myCursor = (TIDParse(cgvCursorAtUri.uri.split('/').at(-1)).timestamp/1000+600).toString(10)
+      }
       const {api, cursor} = pageParam
         ? pageParam
         : {
@@ -207,7 +212,7 @@ export function usePostFeedQuery(
               // Not in the query key. Reacting to it switching isn't important:
               enableFollowingToDiscoverFallback,
             }),
-            cursor: undefined,
+            cursor: myCursor,
           }
 
       try {

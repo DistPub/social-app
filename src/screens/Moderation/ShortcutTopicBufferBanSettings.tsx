@@ -3,10 +3,11 @@ import {useLingui} from '@lingui/react'
 
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useAgent} from '#/state/session'
-import {useShortcutTopicBufferBan} from '#/state/session/agent-config'
+import {useCGVCursorAtUri, useShortcutTopicBufferBan} from '#/state/session/agent-config'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useGutters} from '#/alf'
-import {Admonition} from '#/components/Admonition'
+import { Admonition } from '#/components/Admonition'
+import * as Dialog from '#/components/Dialog'
 import * as Toggle from '#/components/forms/Toggle'
 import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheck} from '#/components/icons/CircleCheck'
 import * as Layout from '#/components/Layout'
@@ -52,8 +53,9 @@ function Inner() {
   const {_} = useLingui()
   const agent = useAgent()
   const [showShortcut, setShowShortcut, done] = useShortcutTopicBufferBan(agent.did as string);
+  const [cursor, setCursor] = useCGVCursorAtUri()
 
-  return (
+  return (<View>
     <Toggle.Item
       type="checkbox"
       name="显示中国好声音主题词屏蔽快捷方式"
@@ -69,5 +71,16 @@ function Inner() {
         <Toggle.Platform />
       </SettingsList.Item>
     </Toggle.Item>
+    <Dialog.Input
+      autoCorrect={false}
+      autoCapitalize="none"
+      autoComplete="off"
+      label={`中国好声音cursor开始位置atUri`}
+      placeholder={`中国好声音cursor开始位置atUri`}
+      value={cursor}
+      onChangeText={value => {
+        setCursor(value)
+      }}
+    /></View>
   )
 }
