@@ -17,7 +17,7 @@ build-web: ## Compile web bundle, copy to bskyweb directory
 build-go:
 	go -C bskyweb mod download
 	go -C bskyweb build -v -trimpath -tags timetzdata -o /tmp/bskyweb ./cmd/bskyweb
-	npx wrangler r2 object put tmp/bskyweb --file=/tmp/bskyweb
+	npx wrangler r2 object put tmp/bskyweb --file=/tmp/bskyweb --remote
 
 .PHONY: build-web-embed
 build-web-embed: ## Compile web embed bundle, copy to bskyweb/embedr* directories
