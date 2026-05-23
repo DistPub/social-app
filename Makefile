@@ -15,8 +15,8 @@ build-web: ## Compile web bundle, copy to bskyweb directory
 
 .PHONY: build-go
 build-go:
-    go -C bskyweb mod download
-    go -C bskyweb build -v -trimpath -tags timetzdata -o ../web-build/bskyweb ./cmd/bskyweb
+	go -C bskyweb mod download
+	go -C bskyweb build -v -trimpath -tags timetzdata -o ../web-build/bskyweb ./cmd/bskyweb
 
 .PHONY: build-web-embed
 build-web-embed: ## Compile web embed bundle, copy to bskyweb/embedr* directories
