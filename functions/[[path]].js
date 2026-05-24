@@ -1,10 +1,8 @@
 export async function onRequest(context) {
-  const {request} = context
-  const userAgent = request.headers.get('user-agent') || ''
-  const botRegex =
-    /(GPTBot|ChatGPT-User|anthropic-ai|ClaudeBot|Claude-SearchBot|OAI-SearchBot|Meta-ExternalAgent|Bytespider|cohere-ai|YouBot|Gemini-Deep-Research|PerplexityBot|Perplexity-User|Googlebot|bingbot|Baiduspider|Yandex|Slurp|DuckDuckBot|Sogou|360Spider)/i
+  const { request } = context
+  const isBot = request.cf?.verifiedBotCategory
 
-  if (botRegex.test(userAgent)) {
+  if (isBot) {
     const ssrUrl = new URL(request.url)
     ssrUrl.host = 'fatesky-ssr.hukoubook.com'
 
