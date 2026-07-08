@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -514,10 +515,15 @@ func (srv *Server) WebPost(c echo.Context) error {
 		log.Warnf("failed to fetch profile for: %s\t%v", identifier, err)
 		return c.Render(http.StatusOK, "post.html", data)
 	}
+
 	unauthedViewingOkay := true
+	badLabels := []string{"not-good", "nsfw"}
 	for _, label := range pv.Labels {
 		if label.Src == pv.Did && label.Val == "!no-unauthenticated" {
 			unauthedViewingOkay = false
+		}
+		if label.Src == "did:web:cgv.hukoubook.com" && slices.Contains(badLabels, label.Val) {
+			return c.String(http.StatusNotFound, "Not Found")
 		}
 	}
 
@@ -662,9 +668,13 @@ func (srv *Server) WebProfile(c echo.Context) error {
 		return c.Render(http.StatusOK, "profile.html", data)
 	}
 	unauthedViewingOkay := true
+	badLabels := []string{"not-good", "nsfw"}
 	for _, label := range pv.Labels {
 		if label.Src == pv.Did && label.Val == "!no-unauthenticated" {
 			unauthedViewingOkay = false
+		}
+		if label.Src == "did:web:cgv.hukoubook.com" && slices.Contains(badLabels, label.Val) {
+			return c.String(http.StatusNotFound, "Not Found")
 		}
 	}
 
