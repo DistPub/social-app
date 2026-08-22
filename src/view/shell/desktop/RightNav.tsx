@@ -112,6 +112,14 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
         )}
       </Text>
 
+      <Text style={[a.leading_snug, t.atoms.text_contrast_low]}>
+            <InlineLinkText
+              to="https://lk8fangkuai.github.io/"
+              label={_(msg`@lk8fangkuai.github.io`)}>
+              {_(msg`@lk8fangkuai.github.io`)}
+            </InlineLinkText>
+      </Text>
+
       {kawaii && (
         <Text style={[t.atoms.text_contrast_medium, {marginTop: 12}]}>
           <Trans>
