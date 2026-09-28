@@ -17,6 +17,7 @@ import {
 } from '#/lib/routes/types'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'
+import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {emitSoftReset} from '#/state/events'
 import {useFetchHandle} from '#/state/queries/handle'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
@@ -589,12 +590,23 @@ function ChatNavItem() {
   const pal = usePalette('default')
   const {_} = useLingui()
   const numUnreadMessages = useUnreadMessageCount()
+  const {dmeUnread, hasNew: dmeHasNew} = useDmeUnreadCount()
+
+  const count =
+    dmeUnread === null
+      ? numUnreadMessages.numUnread
+      : dmeUnread > 10
+        ? '10+'
+        : dmeUnread > 0
+          ? String(dmeUnread)
+          : undefined
+  const hasNew = dmeUnread === null ? numUnreadMessages.hasNew : dmeHasNew
 
   return (
     <NavItem
       href="/messages"
-      count={numUnreadMessages.numUnread}
-      hasNew={numUnreadMessages.hasNew}
+      count={count}
+      hasNew={hasNew}
       icon={
         <Message style={pal.text} aria-hidden={true} width={NAV_ICON_WIDTH} />
       }

@@ -43,6 +43,7 @@ import {
   type State,
 } from '#/lib/routes/types'
 import {bskyTitle} from '#/lib/strings/headings'
+import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useSession} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
@@ -779,8 +780,18 @@ const FlatNavigator = ({
 }) => {
   const t = useTheme()
   const numUnread = useUnreadNotifications()
+  const {dmeUnread} = useDmeUnreadCount()
   const screenListeners = useWebScrollRestoration()
   const title = (page: MessageDescriptor) => bskyTitle(i18n._(page), numUnread)
+  const messagesTitle = (page: MessageDescriptor) =>
+    bskyTitle(
+      i18n._(page),
+      dmeUnread === null || dmeUnread === 0
+        ? numUnread
+        : dmeUnread > 10
+          ? '10+'
+          : String(dmeUnread),
+    )
 
   return (
     <Flat.Navigator
@@ -805,7 +816,7 @@ const FlatNavigator = ({
       <Flat.Screen
         name="Messages"
         getComponent={() => MessagesScreen}
-        options={{title: title(msg`Messages`), requireAuth: true}}
+        options={{title: messagesTitle(msg`Messages`), requireAuth: true}}
       />
       <Flat.Screen
         name="Start"

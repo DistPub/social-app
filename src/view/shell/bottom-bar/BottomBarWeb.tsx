@@ -10,6 +10,7 @@ import {useMinimalShellFooterTransform} from '#/lib/hooks/useMinimalShellTransfo
 import {getCurrentRoute, isTab} from '#/lib/routes/helpers'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
+import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
@@ -58,7 +59,19 @@ export function BottomBarWeb() {
   const iconWidth = 26
 
   const unreadMessageCount = useUnreadMessageCount()
+  const {dmeUnread, hasNew: dmeHasNew} = useDmeUnreadCount()
   const notificationCountStr = useUnreadNotifications()
+
+  const messageCount =
+    dmeUnread === null
+      ? unreadMessageCount.numUnread
+      : dmeUnread > 10
+        ? '10+'
+        : dmeUnread > 0
+          ? String(dmeUnread)
+          : undefined
+  const messageHasNew =
+    dmeUnread === null ? unreadMessageCount.hasNew : dmeHasNew
 
   const showSignIn = React.useCallback(() => {
     closeAllActiveElements()
@@ -123,8 +136,8 @@ export function BottomBarWeb() {
                 <NavItem
                   routeName="Messages"
                   href="/messages"
-                  notificationCount={unreadMessageCount.numUnread}
-                  hasNew={unreadMessageCount.hasNew}>
+                  notificationCount={messageCount}
+                  hasNew={messageHasNew}>
                   {({isActive}) => {
                     const Icon = isActive ? MessageFilled : Message
                     return (
