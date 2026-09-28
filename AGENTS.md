@@ -1,37 +1,39 @@
-# AGENTS.md
+# AGENTS.md — Web Platform Only
 
 > 输出和提示优先使用中文，在输出前先说：帅哥是这样的
 > 详细的组件用法、样式系统和状态管理指南请参考 `CLAUDE.md`，本文件仅记录 CLAUDE.md 未覆盖的高价值信息。
 
-## 项目概要
+## 项目概要（Web）
 
-Bluesky 社交应用，基于 React Native 0.81 + Expo 54 + TypeScript，连接 AT Protocol 去中心化社交网络。跨平台：iOS、Android、Web。
+Bluesky 社交应用 Web 版，基于 React Native 0.81 + Expo 54 + React Native Web + TypeScript，连接 AT Protocol 去中心化社交网络。
 
-- 入口：`index.js`（native）、`index.web.js`（web），根组件 `src/App.native.tsx` / `src/App.web.tsx`
+- 入口：`index.web.js` → 注册 `src/App.web.tsx` 根组件
 - 导航：`src/Navigation.tsx`，路由定义 `src/routes.ts`，路由类型 `src/lib/routes/types.ts`
+- **`/messages` 在 web 上是 DME 加密聊天的 `<iframe>` 嵌入**（不是 bsky 私信列表），详见下文「DME 嵌入聊天（web 私信）」
 - Node 版本：20（见 `.nvmrc`），包管理器：yarn 1.x
+- **Web 开发仅需 `yarn && yarn web`**，无需 Xcode/Android Studio
 
-## 常用命令
+## 常用命令（Web 相关）
 
 ```bash
 yarn install              # 安装依赖（postinstall 自动执行 patch-package 和 intl:compile-if-needed）
-yarn web                  # 启动 web 开发服务器
-yarn ios                  # 启动 iOS（需 Xcode + 模拟器）
-yarn android              # 启动 Android（需 Android Studio + 模拟器）
-yarn start                # 启动 Expo dev client
+yarn web                  # 启动 web 开发服务器（Expo + webpack）
+yarn build-web            # 生产构建（输出到 web-build/，再复制到 bskyweb/static/）
+yarn generate-webpack-stats-file  # 生成 webpack stats 供分析
+yarn open-analyzer        # 打开 bundle analyzer
 
 yarn test                 # 运行 Jest 测试（--forceExit --bail）
-yarn test <pattern>       # 运行单个测试文件，例如 yarn test src/path/to/file.test.ts
+yarn test <pattern>       # 运行单个测试文件
 yarn test-watch           # 监听模式
 yarn lint                 # ESLint（仅 src 目录，--cache --quiet）
 yarn typecheck            # TypeScript 检查（使用 tsconfig.check.json）
 yarn prettier --check .   # Prettier 格式检查
-yarn lint-native          # SwiftLint + KTLint（原生模块 modules/ 目录）
+yarn intl:compile-if-needed  # 本地编译 i18n（postinstall 已自动执行，CI 夜间任务处理 extract+compile）
 ```
 
-### CI 验证链
+### CI 验证链（PR 必须通过）
 
-PR 必须通过的检查（见 `.github/workflows/lint.yml`）：
+见 `.github/workflows/lint.yml`：
 1. `yarn lint`
 2. `yarn lockfile-lint`
 3. `yarn prettier --check .`
@@ -43,52 +45,61 @@ PR 必须通过的检查（见 `.github/workflows/lint.yml`）：
 
 ### i18n（国际化）
 
-- **所有面向用户的字符串必须用 `msg()` 或 `<Trans>` 包裹**，否则 ESLint 规则 `bsky-internal/lingui-msg-rule` 会报错
-- **不要运行 `yarn intl:extract` 或 `yarn intl:compile`**——这些由夜间 CI 任务处理。本地如需编译可运行 `yarn intl:compile-if-needed`（postinstall 已自动执行）
-- 翻译文件位于 `src/locale/locales/{locale}/messages.po`，编译输出为 `messages.js`
+- **所有面向用户的字符串必须用 `msg()` 或 `<Trans>` 包裹**，否则 ESLint 规则 `bsky-internal/lingui-msg-rule` 报错
+- **不要运行 `yarn intl:extract` 或 `yarn intl:compile`**——夜间 CI 任务处理。本地需编译用 `yarn intl:compile-if-needed`
+- 翻译文件：`src/locale/locales/{locale}/messages.po`，编译输出 `messages.js`
 
 ### React Compiler 已启用
 
 - **不要主动添加 `useMemo` 或 `useCallback`**，编译器自动处理 memoization
-- 仅在特殊场景使用：effect 依赖数组中的值、传给非 React 库需要引用稳定性的回调
+- 仅特殊场景使用：effect 依赖数组、传给非 React 库需引用稳定性的回调
 
-### 平台特定文件
+### 平台特定文件（Web 视角）
 
-- 用文件扩展名区分平台：`.tsx`（共享）、`.web.tsx`、`.native.tsx`、`.ios.tsx`、`.android.tsx`
-- Bundler 自动解析平台文件，正常 import 即可，**不要用 `require()` 或条件 import**
-- **TypeScript 编译器在 web 编译时会 choke on `.native.ts` 文件**——因此每个平台特定文件都需要一个不带平台后缀的版本（即 web 版本）。详见 `docs/build.md`
+- 用文件扩展名区分：`.tsx`（共享）、`.web.tsx`（Web 版）、`.native.tsx`（iOS+Android）
+- **Web 编译时会 choke on `.native.ts` 文件**——每个平台特定文件必须有不带后缀的版本（即 web 版）。详见 `docs/build.md`
+- 正常 import 即可，bundler 自动解析，**不要用 `require()` 或条件 import**
 - 平台检测（运行时逻辑）：`import {IS_WEB, IS_NATIVE, IS_IOS, IS_ANDROID} from '#/env'`
+- Web 特有组件见 `src/components/**/*.web.tsx`、`src/view/com/**/*.web.tsx`、`src/screens/**/*.web.tsx`
 
 ### Import 路径
 
 - 始终用 `#/` 别名做绝对 import：`import {useSession} from '#/state/session'`
-- `#/` 映射到 `./src/`（在 `tsconfig.json` 和 `babel.config.js` 中同步配置）
-- ESLint 强制 import 排序（`simple-import-sort`），有特定分组规则——React/RN 优先，然后 expo，然后 `#/` 内部路径
+- `#/` 映射到 `./src/`（`tsconfig.json` 和 `babel.config.js` 同步配置）
+- ESLint 强制 import 排序（`simple-import-sort`）：React/RN 优先 → expo → `#/` 内部路径
 
 ### Dialog 关闭回调（关键）
 
-- **必须用 `control.close(() => ...)` 在动画完成后执行操作**，否则会导致 React 状态更新竞态
+- **必须用 `control.close(() => ...)` 在动画完成后执行操作**，否则 React 状态更新竞态
 - 影响：navigation、打开其他 dialog/menu、setState、queryClient.invalidateQueries
-
-### 原生模块（modules/）
-
-- `modules/` 包含自定义 Expo 模块（BlueskyClip、BlueskyNSE、Share-with-Bluesky、expo-bluesky-swiss-army 等）
-- 修改原生模块后需运行 `yarn lint-native` 检查 Swift/Kotlin 代码
-- `npx expo prebuild` 在 `app.json` 或原生依赖变更后需要重新执行
 
 ### Patches
 
 - `patches/` 目录包含对依赖的补丁（react-native、expo-*、@sentry 等）
 - `patch-package` 在 postinstall 时自动应用，**不要手动修改 node_modules**
 
-## 架构要点
+## 架构要点（Web）
 
-### 双屏幕目录模式
+### 目录结构
 
-- `src/screens/` — 较新的屏幕组件
-- `src/view/screens/` — 旧版屏幕组件
-- `src/view/com/` — 可复用视图组件
-- `src/view/shell/` — App shell（导航栏、标签栏）
+```
+src/
+├── alf/                    # 设计系统（ALF）—— themes, atoms, tokens
+├── components/             # 共享 UI 组件（Button, Dialog, Menu 等，含 .web.tsx 版本）
+├── screens/                # 较新的屏幕组件（含 .web.tsx）
+├── view/
+│   ├── screens/            # 旧版屏幕组件
+│   ├── com/                # 可复用视图组件
+│   └── shell/              # App shell（导航栏、标签栏）——含 .web.tsx
+├── state/
+│   ├── queries/            # TanStack Query hooks（服务端状态）
+│   ├── preferences/        # UI 偏好（React Context）
+│   ├── session/            # 认证状态（useSession(), useAgent()）
+│   └── persisted/          # 持久化存储
+├── lib/                    # 工具、常量、helpers
+├── locale/                 # i18n 配置和语言文件
+└── Navigation.tsx          # 主导航配置
+```
 
 ### 状态管理
 
@@ -97,51 +108,145 @@ PR 必须通过的检查（见 `.github/workflows/lint.yml`）：
 - **认证状态**：`src/state/session/`，用 `useSession()` 和 `useAgent()`
 - Stale time 常量在 `src/state/queries/index.ts`（`STALE.MINUTES.FIVE` 等）
 
+### DME 嵌入聊天（web 私信）
+
+commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Messages`）起，**web 端 `/messages` 不再是 bsky 私信列表，而是用 `<iframe>` 嵌入 DME 加密聊天**（`dme.hukoubook.com`）。全部改动 web-only，native 零改动。
+
+**网络协议与单一事实来源**
+
+- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
+- 与 **dme 仓库**的对接规格见 `docs/dme-embed-protocol.md`，改协议前先读它
+
+**新增文件（均为 web-only）**
+
+- `src/lib/dme-embed/useDmeEmbedBridge.ts` — postMessage 状态机 hook（`waiting`/`ready`/`active`/`unavailable`/`degraded`），导出模块级 `sendToDme(type, payload)`
+- `src/lib/dme-embed/useDmeTokenProvider.ts` — `useDmeTokenProvider({sendToDme})`，提供 `getToken`/`onSessionInvalid`
+- `src/state/dme/useDmeUnreadCount.ts` — 纯内存未读 store（`useSyncExternalStore`），导出 `reportDmeUnread`；`null` 表示 dme 尚未上报
+- `src/screens/Messages/DmeEmbed.tsx` — web-only iframe 容器
+- `src/screens/Messages/ChatList.web.tsx` — `.web.tsx` 平台覆盖，**空占位**（真正的 embed 挂在 shell 层），仅保留 `MessagesScreen` 导出；**删除此文件即回退旧 web 私信列表**
+- `docs/dme-embed-protocol.md` — 给 dme 仓库的对接规格
+
+**修改文件**
+
+- `src/view/shell/index.web.tsx` — **keep-mounted**：DME iframe 挂在 shell 层（navigator 之外），路由切换用 `display` 切换（`display: isAtMessages ? 'flex' : 'none'`）而非卸载；`key={currentAccount?.did}` 是唯一的合法重挂载点（账号切换）；did 变化时 `reportDmeUnread(null)` 重置角标
+- `src/view/shell/desktop/LeftNav.tsx` / `src/view/shell/bottom-bar/BottomBarWeb.tsx` / `src/Navigation.tsx` — 未读角标/标题叠加
+
+**关键约束 / 坑**
+
+- **安全锁（三条件，缺一即静默丢弃）**：`event.origin === DME_EMBED_ORIGIN` **且** `event.source === iframeRef.current?.contentWindow` **且** `event.data?.protocol === DME_EMBED_PROTOCOL`；`postMessage` 的 targetOrigin 恒为 `DME_EMBED_ORIGIN`，**绝不用 `'*'`**
+- **fatesky 是唯一 token 刷新者**：60s 比对 accessJwt 短指纹，变化即重发 `DME_TOKEN`；dme 报 `DME_SESSION_INVALID` 时由 fatesky 执行 `sessionManager.refreshSession()` 后重发。token 不进 React state / 日志 / localStorage / URL
+- **iframe 必须首帧挂载**（握手由 iframe 驱动），`waiting` 时 Loader 是 absolute overlay；`unavailable`/`degraded` 时渲染降级面板（`window.open` 新标签逃生门）
+- **无 `sandbox` 属性**（会阻断 dme 的 localStorage 持久化），`allow` 仅 `clipboard-write`
+- **未读数接管逻辑**：`dmeUnread === null` 时行为与旧逻辑完全一致；`!== null` 时由 dme 接管（`>10` 显示 `'10+'`，`0` 不显示）
+- **dme 侧配套升级是外部依赖**：`dme.hukoubook.com` 目前响应头仍是 `Cross-Origin-Embedder-Policy: require-corp`，**未升级前 web 端会显示降级面板**（预期过渡态，非故障）。dme 需按 `docs/dme-embed-protocol.md` 把 COEP 改为 `credentialless`（或删除该行）并实现 READY/TOKEN、未读上报、PING/PONG
+- **无法绕过的物理限制**：浏览器标签页切到后台会对 timer 降频，iframe 内的轮询/心跳会变慢 —— 不要写"后台也实时"的承诺
+
+**集成边界（Q1a 决议）——以下文件这套集成不动**
+
+- `src/screens/Messages/ChatList.tsx` **零改动**，仍服务 native
+- 不要改 `ChatList.tsx` / `BottomBar.tsx` / `src/state/session/*` / `list-conversations.tsx`
+
 ### 样式系统（ALF）
 
 - 自定义设计系统，Tailwind 风格命名但用 `_` 代替 `-`
 - 静态 atoms：`import {atoms as a} from '#/alf'`（`a.flex_row`、`a.p_md` 等）
 - 主题 atoms：`const t = useTheme()`（`t.atoms.bg`、`t.atoms.text` 等）
 - 间距/文字大小用 t-shirt 尺寸：`xs`、`sm`、`md`、`lg`、`xl`
+- 平台工具：`import {web, native, platform} from '#/alf'`
+- 断点：`import {useBreakpoints} from '#/alf'` → `gtPhone`、`gtMobile`、`gtTablet`
 - 详见 `CLAUDE.md` 的样式系统章节
 
-### 子项目
+### 子项目（仅 bskyweb 与 Web 相关）
 
 | 目录 | 说明 |
 |------|------|
 | `bskyweb/` | Go 服务，生产环境提供 web 应用（本地开发不需要） |
-| `bskyembed/` | 嵌入式小组件 |
-| `bskylink/` | 链接卡片服务 |
-| `bskyogcard/` | OG 图片生成 |
 
 #### bskyweb Go 服务
 
 - 使用 Echo v4 Web 框架，路由定义在 `bskyweb/cmd/bskyweb/server.go`
 - RSS 渲染逻辑在 `bskyweb/cmd/bskyweb/rss.go`
-- 路由支持 handle 和 DID 两种格式：`/profile/:handleOrDID/feed/:rkey/rss`、`/profile/:handleOrDID/rss`
+- 路由支持 handle 和 DID：`/profile/:handleOrDID/feed/:rkey/rss`、`/profile/:handleOrDID/rss`
 - 本地运行：`cd bskyweb && go run ./cmd/bskyweb serve --appview-host=https://public.api.bsky.app`
 - 编译：`cd bskyweb && go build -o bskyweb ./cmd/bskyweb`
+- `yarn build-web` 先构建 SPA bundle，再由 bskyweb serve 静态文件
 
 ## 测试
 
 - Jest preset: `jest-expo/ios`，setup 文件 `jest/jestSetup.js`
 - 测试文件在 `__tests__/`，mock 文件在 `__mocks__/`
-- E2E 测试用 Maestro（`__e2e__/flows/*.yml`），需先启动 mock server
-- 性能测试用 Flashlight
+- **E2E 测试用 Maestro**，需先启动 mock server（见 `docs/testing.md`）
 
-### 运行 E2E
+### 运行 E2E（Web 相关）
 
 ```bash
-yarn e2e:mock-server    # 终端 1
-yarn e2e:build          # 终端 2（首次）
-yarn e2e:start          # 终端 2
-yarn e2e:run            # 终端 3
+yarn e2e:mock-server    # 终端 1：mock 后端
+yarn e2e:build          # 终端 2：首次构建（生成 e2e build）
+yarn e2e:start          # 终端 2：启动 Expo（e2e 模式）
+yarn e2e:run            # 终端 3：运行 maestro 测试
 ```
 
-## 开发环境设置
+## 开发环境设置（Web）
 
-- Web 开发：只需 `yarn && yarn web`
-- Native 开发：需要 Xcode（iOS）或 Android Studio（Android），详见 `docs/build.md`
+- **仅需**：`yarn && yarn web`
 - 复制 `.env.example` 到 `.env`（Sentry token 非必需）
-- `JAVA_HOME` 必须指向 zulu-17（Android 构建）
-- `google-services.json.example` 复制为 `google-services.json`（不需要真实 Firebase 项目）
+- 如需本地跑 bskyweb Go 服务：`cd bskyweb && go run ./cmd/bskyweb serve`
+
+## Web 特有注意事项
+
+### 组件平台差异
+
+| 组件 | Web 行为 | Native 行为 |
+|------|----------|-------------|
+| `Dialog` | Radix UI 模态框 | BottomSheet |
+| `Dialog.Close` | 渲染 X 关闭按钮 | 不渲染 |
+| `Dialog.Handle` | 不渲染 | 渲染拖拽手柄 |
+| `Menu` | 下拉菜单（Radix） | BottomSheet dialog |
+| `Menu.Divider` | 渲染分割线 | 不渲染 |
+| `Menu.ContainerItem` | 不工作 | 可用 |
+
+### 样式平台工具
+
+```tsx
+import {web, native, platform} from '#/alf'
+
+const styles = [
+  a.p_md,
+  web({cursor: 'pointer'}),           // 仅 Web
+  native({paddingBottom: 20}),        // 仅 Native
+  platform({ios: {...}, android: {...}, web: {...}}),  // 三端分别指定
+]
+```
+
+### 入口与启动流程
+
+1. `index.web.js` → 导入 polyfills → `registerRootComponent(App)`
+2. `src/App.web.tsx`：初始化 Sentry、i18n、Theme、QueryProvider、Session 等 Provider
+3. `Geo.resolve()`、`prefetchAgeAssuranceConfig()`、`prefetchLiveEvents()`、`prefetchAppConfig()` 并行预取
+4. `InnerApp` 按 `currentAccount?.did` key 重置树，挂载 `Shell` + `ToastOutlet`
+
+### 构建产物
+
+- `yarn build-web` → `expo export:web` + `scripts/post-web-build.js`
+- 输出：`web-build/` 目录（切片 chunk + sourcemap），随后由 `scripts/post-web-build.js` 复制到 `bskyweb/static/`
+- **注意**：产物目录是 `web-build/`，不是 `dist/`（`dist/` 在本仓库不存在且被 gitignore）
+- bskyweb Go 服务 serve `bskyweb/static/` 作为生产静态服务
+
+## 代码规范速查
+
+- **Import 排序**：`simple-import-sort` 分组（React/RN → expo → `#/`）
+- **TypeScript**：严格模式，`tsconfig.check.json` 用于 CI
+- **ESLint**：`bsky-internal/lingui-msg-rule` 强制 i18n，`react-compiler` 规则
+- **Prettier**：单引号、尾逗号、printWidth 100
+- **样式**：优先用 ALF atoms，避免内联 style，主题色用 `t.atoms.*`
+
+## 常见坑
+
+1. **Dialog 关闭后操作**：必须 `control.close(() => ...)`
+2. **受控 vs 非受控输入**：优先 `defaultValue`，避免 `value` 导致性能问题
+3. **React Compiler**：别加 `useMemo`/`useCallback`，除非有明确理由
+4. **平台文件**：每个 `.native.tsx` 必须有对应的无后缀 `.tsx`（即 web 版）
+5. **i18n**：新增字符串立即用 `msg()` 包裹，别等 CI 报错
+6. **Sentry**：本地开发可留空 `SENTRY_AUTH_TOKEN`，不影响运行
+7. **Web 私信 = DME 嵌入**：`/messages` 在 web 上是 DME 的 iframe，不是 bsky 私信列表。动 web 私信前先读 `docs/dme-embed-protocol.md`，并遵守「DME 嵌入聊天（web 私信）」的集成边界（`ChatList.tsx`/`BottomBar.tsx`/`src/state/session/*`/`list-conversations.tsx` 不动）
+8. **DME iframe 挂在 shell 层、唯一实例**：挂载在 `src/view/shell/index.web.tsx`（navigator 之外），路由切换只用 `display` 切换、**不要卸载**，**不要**把它放进 react-navigation 的 screen（会被卸载）。`position: 'fixed'` 在 `.tsx` 里过不了 RN 类型，web 专用 fixed 用 ALF 的 `a.fixed`（web 上是 fixed，native 上是 absolute）
