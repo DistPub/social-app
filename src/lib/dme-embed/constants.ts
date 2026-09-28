@@ -1,8 +1,7 @@
 /**
  * Single source of truth for the DME embed protocol constants shared with the
- * fatesky side. The dme-side contract is documented in
- * `docs/dme-embed-protocol.md`. Message names and the protocol version string
- * MUST stay byte-for-byte in sync across both repos.
+ * dme side. Message names and the protocol version string MUST stay
+ * byte-for-byte in sync across both repos.
  */
 
 /**

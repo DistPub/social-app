@@ -115,7 +115,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 **网络协议与单一事实来源**
 
 - 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
-- 与 **dme 仓库**的对接规格见 `docs/dme-embed-protocol.md`，改协议前先读它
+- **`constants.ts` 是协议的单一事实来源**，与 dme 仓库的对接规格以它为准；消息名与 `dme-embed/v1` 版本字符串必须与 dme 侧逐字一致，不得自行改名或改值
 
 **新增文件（均为 web-only）**
 
@@ -124,7 +124,6 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - `src/state/dme/useDmeUnreadCount.ts` — 纯内存未读 store（`useSyncExternalStore`），导出 `reportDmeUnread`；`null` 表示 dme 尚未上报
 - `src/screens/Messages/DmeEmbed.tsx` — web-only iframe 容器
 - `src/screens/Messages/ChatList.web.tsx` — `.web.tsx` 平台覆盖，**空占位**（真正的 embed 挂在 shell 层），仅保留 `MessagesScreen` 导出；**删除此文件即回退旧 web 私信列表**
-- `docs/dme-embed-protocol.md` — 给 dme 仓库的对接规格
 
 **修改文件**
 
@@ -136,9 +135,9 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - **安全锁（三条件，缺一即静默丢弃）**：`event.origin === DME_EMBED_ORIGIN` **且** `event.source === iframeRef.current?.contentWindow` **且** `event.data?.protocol === DME_EMBED_PROTOCOL`；`postMessage` 的 targetOrigin 恒为 `DME_EMBED_ORIGIN`，**绝不用 `'*'`**
 - **fatesky 是唯一 token 刷新者**：60s 比对 accessJwt 短指纹，变化即重发 `DME_TOKEN`；dme 报 `DME_SESSION_INVALID` 时由 fatesky 执行 `sessionManager.refreshSession()` 后重发。token 不进 React state / 日志 / localStorage / URL
 - **iframe 必须首帧挂载**（握手由 iframe 驱动），`waiting` 时 Loader 是 absolute overlay；`unavailable`/`degraded` 时渲染降级面板（`window.open` 新标签逃生门）
-- **无 `sandbox` 属性**（会阻断 dme 的 localStorage 持久化），`allow` 仅 `clipboard-write`
+- **无 `sandbox` 属性**（会阻断 dme 的 localStorage 持久化），`allow` 仅 `clipboard-write; fullscreen; autoplay`（复制消息 / iframe 内视频全屏 / 消息提示音与静音视频预览自动播放）
 - **未读数接管逻辑**：`dmeUnread === null` 时行为与旧逻辑完全一致；`!== null` 时由 dme 接管（`>10` 显示 `'10+'`，`0` 不显示）
-- **dme 侧配套升级是外部依赖**：`dme.hukoubook.com` 目前响应头仍是 `Cross-Origin-Embedder-Policy: require-corp`，**未升级前 web 端会显示降级面板**（预期过渡态，非故障）。dme 需按 `docs/dme-embed-protocol.md` 把 COEP 改为 `credentialless`（或删除该行）并实现 READY/TOKEN、未读上报、PING/PONG
+- **COEP/嵌入头现状（按实测记录，双方均无需改动）**：dme 侧保持 `Cross-Origin-Embedder-Policy: require-corp` + `Cross-Origin-Opener-Policy: same-origin`（嵌入不需要放宽 COEP，embed 与宿主仅经 `postMessage` 通信，不涉及跨源隔离资源加载）；dme 未设 `X-Frame-Options` 与 CSP `frame-ancestors`，故可被 iframe 嵌入。fatesky 侧**未设置任何 `Cross-Origin-*` 响应头**（`curl -sI https://app.hukoubook.com/` 仅见 `referrer-policy`），因此不存在"需要放宽 COEP"一说 —— 不要把降级面板归因于 COEP
 - **无法绕过的物理限制**：浏览器标签页切到后台会对 timer 降频，iframe 内的轮询/心跳会变慢 —— 不要写"后台也实时"的承诺
 
 **集成边界（Q1a 决议）——以下文件这套集成不动**
@@ -248,5 +247,5 @@ const styles = [
 4. **平台文件**：每个 `.native.tsx` 必须有对应的无后缀 `.tsx`（即 web 版）
 5. **i18n**：新增字符串立即用 `msg()` 包裹，别等 CI 报错
 6. **Sentry**：本地开发可留空 `SENTRY_AUTH_TOKEN`，不影响运行
-7. **Web 私信 = DME 嵌入**：`/messages` 在 web 上是 DME 的 iframe，不是 bsky 私信列表。动 web 私信前先读 `docs/dme-embed-protocol.md`，并遵守「DME 嵌入聊天（web 私信）」的集成边界（`ChatList.tsx`/`BottomBar.tsx`/`src/state/session/*`/`list-conversations.tsx` 不动）
+7. **Web 私信 = DME 嵌入**：`/messages` 在 web 上是 DME 的 iframe，不是 bsky 私信列表。动 web 私信前先读 `src/lib/dme-embed/constants.ts`（协议单一事实来源），并遵守「DME 嵌入聊天（web 私信）」的集成边界（`ChatList.tsx`/`BottomBar.tsx`/`src/state/session/*`/`list-conversations.tsx` 不动）
 8. **DME iframe 挂在 shell 层、唯一实例**：挂载在 `src/view/shell/index.web.tsx`（navigator 之外），路由切换只用 `display` 切换、**不要卸载**，**不要**把它放进 react-navigation 的 screen（会被卸载）。`position: 'fixed'` 在 `.tsx` 里过不了 RN 类型，web 专用 fixed 用 ALF 的 `a.fixed`（web 上是 fixed，native 上是 absolute）
