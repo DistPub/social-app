@@ -18,25 +18,25 @@ Bluesky Social is a cross-platform social media application built with React Nat
 
 ```bash
 # Development
-yarn start              # Start Expo dev server
-yarn web                # Start web version
-yarn android            # Run on Android
-yarn ios                # Run on iOS
+bun run start           # Start Expo dev server
+bun run web             # Start web version
+bun run android         # Run on Android
+bun run ios             # Run on iOS
 
 # Testing & Quality
-# IMPORTANT: Always use these yarn scripts, never call the underlying tools directly
-yarn test               # Run Jest tests
-yarn lint               # Run ESLint
-yarn typecheck          # Run TypeScript type checking
+# IMPORTANT: Always use these bun scripts, never call the underlying tools directly
+bun run test            # Run Jest tests
+bun run lint            # Run ESLint
+bun run typecheck       # Run TypeScript type checking
 
 # Internationalization
 # DO NOT run these commands - extraction and compilation are handled by CI
-yarn intl:extract       # Extract translation strings (nightly CI job)
-yarn intl:compile       # Compile translations for runtime (nightly CI job)
+bun run intl:extract    # Extract translation strings (nightly CI job)
+bun run intl:compile    # Compile translations for runtime (nightly CI job)
 
 # Build
-yarn build-web          # Build web version
-yarn prebuild           # Generate native projects
+bun run build-web       # Build web version
+bun run prebuild        # Generate native projects
 ```
 
 ## Project Structure
@@ -302,8 +302,8 @@ function MyComponent() {
 **Commands:**
 ```bash
 # DO NOT run these commands - extraction and compilation are handled by a nightly CI job
-yarn intl:extract    # Extract new strings to locale files
-yarn intl:compile    # Compile translations for runtime
+bun run intl:extract    # Extract new strings to locale files
+bun run intl:compile    # Compile translations for runtime
 ```
 
 ## State Management

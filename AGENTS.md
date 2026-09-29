@@ -10,43 +10,43 @@ Bluesky 社交应用 Web 版，基于 React Native 0.81 + Expo 54 + React Native
 - 入口：`index.web.js` → 注册 `src/App.web.tsx` 根组件
 - 导航：`src/Navigation.tsx`，路由定义 `src/routes.ts`，路由类型 `src/lib/routes/types.ts`
 - **`/messages` 在 web 上是 DME 加密聊天的 `<iframe>` 嵌入**（不是 bsky 私信列表），详见下文「DME 嵌入聊天（web 私信）」
-- Node 版本：20（见 `.nvmrc`），包管理器：yarn 1.x
-- **Web 开发仅需 `yarn && yarn web`**，无需 Xcode/Android Studio
+- Node 版本：20（见 `.nvmrc`），包管理器：bun
+- **Web 开发仅需 `bun install && bun run web`**，无需 Xcode/Android Studio
 
 ## 常用命令（Web 相关）
 
 ```bash
-yarn install              # 安装依赖（postinstall 自动执行 patch-package 和 intl:compile-if-needed）
-yarn web                  # 启动 web 开发服务器（Expo + webpack）
-yarn build-web            # 生产构建（输出到 web-build/，再复制到 bskyweb/static/）
-yarn generate-webpack-stats-file  # 生成 webpack stats 供分析
-yarn open-analyzer        # 打开 bundle analyzer
+bun install               # 安装依赖（postinstall 自动执行 patch-package 和 intl:compile-if-needed）
+bun run web               # 启动 web 开发服务器（Expo + webpack）
+bun run build-web         # 生产构建（输出到 web-build/，再复制到 bskyweb/static/）
+bun run generate-webpack-stats-file  # 生成 webpack stats 供分析
+bun run open-analyzer     # 打开 bundle analyzer
 
-yarn test                 # 运行 Jest 测试（--forceExit --bail）
-yarn test <pattern>       # 运行单个测试文件
-yarn test-watch           # 监听模式
-yarn lint                 # ESLint（仅 src 目录，--cache --quiet）
-yarn typecheck            # TypeScript 检查（使用 tsconfig.check.json）
-yarn prettier --check .   # Prettier 格式检查
-yarn intl:compile-if-needed  # 本地编译 i18n（postinstall 已自动执行，CI 夜间任务处理 extract+compile）
+bun run test              # 运行 Jest 测试（--forceExit --bail）
+bun run test <pattern>    # 运行单个测试文件
+bun run test-watch        # 监听模式
+bun run lint              # ESLint（仅 src 目录，--cache --quiet）
+bun run typecheck         # TypeScript 检查（使用 tsconfig.check.json）
+bun run prettier --check .  # Prettier 格式检查
+bun run intl:compile-if-needed  # 本地编译 i18n（postinstall 已自动执行，CI 夜间任务处理 extract+compile）
 ```
 
 ### CI 验证链（PR 必须通过）
 
 见 `.github/workflows/lint.yml`：
-1. `yarn lint`
-2. `yarn lockfile-lint`
-3. `yarn prettier --check .`
-4. `yarn intl:build`（extract + compile）
-5. `yarn typecheck`
-6. `yarn test`
+1. `bun run lint`
+2. `bun run lockfile-lint`
+3. `bun run prettier --check .`
+4. `bun run intl:build`（extract + compile）
+5. `bun run typecheck`
+6. `bun run test`
 
 ## 关键约束
 
 ### i18n（国际化）
 
 - **所有面向用户的字符串必须用 `msg()` 或 `<Trans>` 包裹**，否则 ESLint 规则 `bsky-internal/lingui-msg-rule` 报错
-- **不要运行 `yarn intl:extract` 或 `yarn intl:compile`**——夜间 CI 任务处理。本地需编译用 `yarn intl:compile-if-needed`
+- **不要运行 `bun run intl:extract` 或 `bun run intl:compile`**——夜间 CI 任务处理。本地需编译用 `bun run intl:compile-if-needed`
 - 翻译文件：`src/locale/locales/{locale}/messages.po`，编译输出 `messages.js`
 
 ### React Compiler 已启用
@@ -168,7 +168,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - 路由支持 handle 和 DID：`/profile/:handleOrDID/feed/:rkey/rss`、`/profile/:handleOrDID/rss`
 - 本地运行：`cd bskyweb && go run ./cmd/bskyweb serve --appview-host=https://public.api.bsky.app`
 - 编译：`cd bskyweb && go build -o bskyweb ./cmd/bskyweb`
-- `yarn build-web` 先构建 SPA bundle，再由 bskyweb serve 静态文件
+- `bun run build-web` 先构建 SPA bundle，再由 bskyweb serve 静态文件
 
 ## 测试
 
@@ -179,15 +179,15 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 ### 运行 E2E（Web 相关）
 
 ```bash
-yarn e2e:mock-server    # 终端 1：mock 后端
-yarn e2e:build          # 终端 2：首次构建（生成 e2e build）
-yarn e2e:start          # 终端 2：启动 Expo（e2e 模式）
-yarn e2e:run            # 终端 3：运行 maestro 测试
+bun run e2e:mock-server    # 终端 1：mock 后端
+bun run e2e:build          # 终端 2：首次构建（生成 e2e build）
+bun run e2e:start          # 终端 2：启动 Expo（e2e 模式）
+bun run e2e:run            # 终端 3：运行 maestro 测试
 ```
 
 ## 开发环境设置（Web）
 
-- **仅需**：`yarn && yarn web`
+- **仅需**：`bun install && bun run web`
 - 复制 `.env.example` 到 `.env`（Sentry token 非必需）
 - 如需本地跑 bskyweb Go 服务：`cd bskyweb && go run ./cmd/bskyweb serve`
 
@@ -226,7 +226,7 @@ const styles = [
 
 ### 构建产物
 
-- `yarn build-web` → `expo export:web` + `scripts/post-web-build.js`
+- `bun run build-web` → `expo export:web` + `scripts/post-web-build.js`
 - 输出：`web-build/` 目录（切片 chunk + sourcemap），随后由 `scripts/post-web-build.js` 复制到 `bskyweb/static/`
 - **注意**：产物目录是 `web-build/`，不是 `dist/`（`dist/` 在本仓库不存在且被 gitignore）
 - bskyweb Go 服务 serve `bskyweb/static/` 作为生产静态服务

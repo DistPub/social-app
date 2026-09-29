@@ -1,0 +1,15 @@
+# Bun configuration for the web platform build.
+#
+# `bun install` runs the root package's own `postinstall` script
+# (`patch-package && bun run intl:compile-if-needed`) automatically. Bun only
+# blocks lifecycle scripts of *installed dependencies* unless trusted, so
+# `patch-package` (a root dependency invoked as a bin) still applies all 25
+# patches in ./patches.
+#
+# If a dependency later needs its own install script to run, add it to
+# `trustedDependencies` in package.json -- NOT here: bunfig.toml has no
+# `install.trustedDependencies` key.
+[install]
+# Do not freeze by default so local `bun install` can update bun.lock when
+# package.json changes. CI passes `--frozen-lockfile` to enforce an exact match.
+frozenLockfile = false

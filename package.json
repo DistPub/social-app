@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "yarn@1.22.22",
+  "packageManager": "bun@1.3.14",
   "expo": {
     "autolinking": {
       "android": {
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "prepare": "is-ci || husky install",
-    "postinstall": "patch-package && yarn intl:compile-if-needed",
+    "postinstall": "patch-package && bun run intl:compile-if-needed",
     "prebuild": "EXPO_NO_GIT_STATUS=1 expo prebuild --clean",
     "android": "expo run:android",
     "android:prod": "expo run:android --variant release",
@@ -55,11 +55,11 @@
     "perf:test:measure": "NODE_ENV=test flashlight test --bundleId xyz.blueskyweb.app --testCommand \"yarn perf:test\" --duration 150000 --resultsFilePath .perf/results.json",
     "perf:test:results": "NODE_ENV=test flashlight report .perf/results.json",
     "perf:measure": "NODE_ENV=test flashlight measure",
-    "intl:build": "yarn intl:extract:all && yarn intl:compile",
+    "intl:build": "bun run intl:extract:all && bun run intl:compile",
     "intl:extract": "lingui extract --clean --locale en",
     "intl:extract:all": "lingui extract --clean",
     "intl:compile": "lingui compile",
-    "intl:compile-if-needed": "is-ci || [ -f src/locale/locales/en/messages.js ] || yarn intl:compile",
+    "intl:compile-if-needed": "is-ci || [ -f src/locale/locales/en/messages.js ] || bun run intl:compile",
     "intl:pull": "crowdin download translations --verbose -b main",
     "intl:push": "crowdin push translations --verbose -b main",
     "intl:push-sources": "crowdin push sources --verbose -b main",
@@ -68,8 +68,8 @@
     "export": "npx expo export --dump-sourcemap && yarn upload-native-sourcemaps",
     "upload-native-sourcemaps": "npx sentry-expo-upload-sourcemaps dist",
     "make-deploy-bundle": "bash scripts/bundleUpdate.sh",
-    "generate-webpack-stats-file": "EXPO_PUBLIC_GENERATE_STATS=1 yarn build-web",
-    "open-analyzer": "EXPO_PUBLIC_OPEN_ANALYZER=1 yarn build-web",
+    "generate-webpack-stats-file": "EXPO_PUBLIC_GENERATE_STATS=1 bun run build-web",
+    "open-analyzer": "EXPO_PUBLIC_OPEN_ANALYZER=1 bun run build-web",
     "icons:optimize": "svgo -f ./assets/icons"
   },
   "dependencies": {
@@ -79,7 +79,7 @@
     "@bsky.app/alf": "^0.1.7",
     "@bsky.app/expo-image-crop-tool": "^0.5.0",
     "@bsky.app/react-native-mmkv": "2.12.5",
-    "@discord/bottom-sheet": "bluesky-social/react-native-bottom-sheet",
+    "@discord/bottom-sheet": "github:bluesky-social/react-native-bottom-sheet#28a87d1bb55e10fc355fa1455545a30734995908",
     "@emoji-mart/react": "^1.1.1",
     "@expo/html-elements": "^0.12.5",
     "@expo/webpack-config": "^19.0.1",
@@ -98,7 +98,7 @@
     "@haileyok/bluesky-video": "0.3.2",
     "@ipld/dag-cbor": "^9.2.0",
     "@lingui/react": "^4.14.1",
-    "@mattermost/react-native-paste-input": "mattermost/react-native-paste-input",
+    "@mattermost/react-native-paste-input": "github:mattermost/react-native-paste-input#f260447edc645a817ab1ba7b46d8341d84dba8e9",
     "@miblanchard/react-native-slider": "^2.6.0",
     "@mozzius/expo-dynamic-app-icon": "^1.8.0",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -205,7 +205,7 @@
     "react-native-get-random-values": "~1.11.0",
     "react-native-keyboard-controller": "^1.20.7",
     "react-native-pager-view": "6.8.0",
-    "react-native-progress": "bluesky-social/react-native-progress",
+    "react-native-progress": "github:bluesky-social/react-native-progress#5a372f4f2ce5feb26f4f47b6a4d187ab9b923ab4",
     "react-native-qrcode-styled": "^0.3.3",
     "react-native-reanimated": "^3.19.1",
     "react-native-safe-area-context": "~5.6.0",
@@ -258,7 +258,7 @@
     "babel-preset-expo": "~54.0.0",
     "eslint": "^9.39.2",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-bsky-internal": "link:./eslint",
+    "eslint-plugin-bsky-internal": "file:./eslint",
     "eslint-plugin-import-x": "^4.16.1",
     "eslint-plugin-lingui": "^0.11.0",
     "eslint-plugin-react": "^7.37.5",
@@ -275,7 +275,6 @@
     "jest-expo": "~54.0.14",
     "jest-junit": "^16.0.0",
     "lint-staged": "^13.2.3",
-    "lockfile-lint": "^4.14.0",
     "prettier": "^3.6.0",
     "react-native-dotenv": "^3.4.11",
     "react-refresh": "^0.14.0",
@@ -286,7 +285,7 @@
     "typescript-eslint": "^8.56.0",
     "webpack-bundle-analyzer": "^4.10.1"
   },
-  "resolutions": {
+  "overrides": {
     "@react-native/babel-preset": "0.81.5",
     "@react-native/normalize-colors": "0.81.5",
     "**/@expo/image-utils": "0.8.7",
@@ -355,29 +354,5 @@
     "assets/icons/*.svg": [
       "svgo"
     ]
-  },
-  "lockfile-lint": {
-    "path": "yarn.lock",
-    "allowedHosts": [
-      "npm",
-      "yarn"
-    ],
-    "allowedSchemes": [
-      "https:"
-    ],
-    "allowedPackageNameAliases": [
-      "@babel/traverse--for-generate-function-map:@babel/traverse",
-      "string-width-cjs:string-width",
-      "strip-ansi-cjs:strip-ansi",
-      "wrap-ansi-cjs:wrap-ansi"
-    ],
-    "allowedUrls": [
-      "https://codeload.github.com/bluesky-social/react-native-bottom-sheet/tar.gz/28a87d1bb55e10fc355fa1455545a30734995908",
-      "https://codeload.github.com/bluesky-social/react-native-progress/tar.gz/5a372f4f2ce5feb26f4f47b6a4d187ab9b923ab4",
-      "https://codeload.github.com/mattermost/react-native-paste-input/tar.gz/f260447edc645a817ab1ba7b46d8341d84dba8e9"
-    ],
-    "emptyHostname": false,
-    "validatePackageNames": true,
-    "validateIntegrity": true
   }
 }
