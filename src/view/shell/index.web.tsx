@@ -8,7 +8,7 @@ import {RemoveScrollBar} from 'react-remove-scroll-bar'
 import {sendToDme} from '#/lib/dme-embed/useDmeEmbedBridge'
 import {useDmeTokenProvider} from '#/lib/dme-embed/useDmeTokenProvider'
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
-import {useNavigationTabState} from '#/lib/hooks/useNavigationTabState'
+import {getCurrentRoute} from '#/lib/routes/helpers'
 import {type NavigationProp} from '#/lib/routes/types'
 import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
 import {useSession} from '#/state/session'
@@ -58,13 +58,34 @@ import {DrawerContent} from './Drawer'
  */
 const DME_MOBILE_BOTTOM_INSET = 61
 
+/**
+ * ShellInner sits inside `NavigationContainer` but OUTSIDE `FlatNavigator`,
+ * so `useNavigationState` (used by `useNavigationTabState`) throws — that
+ * context is only provided within a navigator (react-navigation v7). The
+ * container navigation object is available here though, so derive the flag
+ * from `getState()` + its `'state'` events instead.
+ */
+function useIsAtMessages(): boolean {
+  const navigator = useNavigation<NavigationProp>()
+  const [isAtMessages, setIsAtMessages] = useState(
+    () => getCurrentRoute(navigator.getState()).name === 'Messages',
+  )
+  useEffect(() => {
+    const update = () =>
+      setIsAtMessages(getCurrentRoute(navigator.getState()).name === 'Messages')
+    update()
+    return navigator.addListener('state', update)
+  }, [navigator])
+  return isAtMessages
+}
+
 function ShellInner() {
   const navigator = useNavigation<NavigationProp>()
   const closeAllActiveElements = useCloseAllActiveElements()
   const {state: policyUpdateState} = usePolicyUpdateContext()
   const welcomeModalControl = useWelcomeModal()
   const {hasSession, currentAccount} = useSession()
-  const {isAtMessages} = useNavigationTabState()
+  const isAtMessages = useIsAtMessages()
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
   const tokenProvider = useDmeTokenProvider({sendToDme})
