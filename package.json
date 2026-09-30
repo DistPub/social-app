@@ -20,7 +20,7 @@
   },
   "scripts": {
     "prepare": "is-ci || husky install",
-    "postinstall": "patch-package || { if [ \"$PATCH_PACKAGE_RETRYED\" = \"1\" ]; then echo '[postinstall] patch-package failed again after node_modules wipe, giving up'; exit 1; fi; echo '[postinstall] patch-package failed, wiping node_modules and reinstalling once'; rm -rf node_modules; PATCH_PACKAGE_RETRYED=1 bun install --frozen-lockfile; } && bun run intl:compile-if-needed",
+    "postinstall": "patch-package && bun run intl:compile-if-needed",
     "prebuild": "EXPO_NO_GIT_STATUS=1 expo prebuild --clean",
     "android": "expo run:android",
     "android:prod": "expo run:android --variant release",
