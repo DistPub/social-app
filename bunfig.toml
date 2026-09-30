@@ -10,6 +10,15 @@
 # `trustedDependencies` in package.json -- NOT here: bunfig.toml has no
 # `install.trustedDependencies` key.
 [install]
+# Copy files into node_modules instead of hardlinking them from the global
+# cache (Linux default) / clonefile (macOS default). patch-package rewrites
+# patched files in place; with hardlinks that write goes through to the shared
+# global cache and contaminates it, so the next fresh install (e.g. every CI
+# build with a warm ~/.bun cache) receives an already-patched package with no
+# .patch-package.json state file and fails with "Failed to apply patch file".
+# copyfile keeps node_modules independent of the cache.
+backend = "copyfile"
+
 # Do not freeze by default so local `bun install` can update bun.lock when
 # package.json changes. CI passes `--frozen-lockfile` to enforce an exact match.
 frozenLockfile = false
