@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react'
+import {useCallback, useEffect, useMemo, useRef} from 'react'
 
 import {DME_MSG} from '#/lib/dme-embed/constants'
 import {useAgent, useSession} from '#/state/session'
@@ -84,7 +84,7 @@ export function useDmeTokenProvider(
     sendToDmeRef.current = sendToDme
   })
 
-  const getToken = (): DmeTokenPayload | null => {
+  const getToken = useCallback((): DmeTokenPayload | null => {
     const session = agentRef.current.session
     if (!session) return null
     return {
@@ -94,9 +94,9 @@ export function useDmeTokenProvider(
       refreshJwt: session.refreshJwt,
       service: currentAccountRef.current?.service,
     }
-  }
+  }, [])
 
-  const onSessionInvalid = () => {
+  const onSessionInvalid = useCallback(() => {
     const currentAgent = agentRef.current
     // No active session → nothing to refresh. The embed stays degraded and
     // may send another SESSION_INVALID later.
@@ -108,14 +108,17 @@ export function useDmeTokenProvider(
     currentAgent.sessionManager
       .refreshSession()
       .then(() => {
-        sendToDmeRef.current(DME_MSG.TOKEN, getToken())
+        const token = getToken()
+        if (token) {
+          sendToDmeRef.current(DME_MSG.TOKEN, token)
+        }
       })
       .catch(() => {
         // Refresh failed. No further action: the embed is already showing a
         // degraded/offline experience, or it will report SESSION_INVALID
         // again later.
       })
-  }
+  }, [])
 
   // Token rotation watcher. Runs only while this hook is mounted — i.e. only
   // in the web shell context where the DME embed (and its bridge target)
@@ -137,5 +140,8 @@ export function useDmeTokenProvider(
     }
   }, [])
 
-  return {getToken, onSessionInvalid}
+  return useMemo(
+    () => ({getToken, onSessionInvalid}),
+    [getToken, onSessionInvalid],
+  )
 }

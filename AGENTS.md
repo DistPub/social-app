@@ -78,6 +78,12 @@ bun run intl:compile-if-needed  # 本地编译 i18n（postinstall 已自动执�
 - `patches/` 目录包含对依赖的补丁（react-native、expo-*、@sentry 等）
 - `patch-package` 在 postinstall 时自动应用，**不要手动修改 node_modules**
 
+### 本地修改验证
+
+- **改代码后不需要跑 `bun run typecheck` 或 `bun run lint`，只要 `bun run build-web` 能成功通过即可**
+- 上述要求仅针对本地开发验证；CI / PR 仍按「CI 验证链」执行 lint、typecheck、prettier、test 等全部检查
+- 如果构建失败，优先修复构建错误；构建通过后再根据报错酌情处理明显的 lint/type 问题
+
 ## 架构要点（Web）
 
 ### 目录结构

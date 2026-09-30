@@ -28,11 +28,7 @@ import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
  */
 
 export type DmeEmbedStatus =
-  | 'waiting'
-  | 'ready'
-  | 'active'
-  | 'unavailable'
-  | 'degraded'
+  'waiting' | 'ready' | 'active' | 'unavailable' | 'degraded'
 
 export type DmeTokenPayload = {
   did: string
@@ -71,20 +67,42 @@ let currentTarget: HTMLIFrameElement | null = null
  * embed is mounted. The `targetOrigin` MUST stay the exact DME origin — never
  * a wildcard — so the browser itself refuses delivery if the frame has been
  * navigated elsewhere.
+ *
+ * Returns whether the postMessage call was actually made. Callers that need
+ * to know a token was delivered (not just that one existed) can use this to
+ * avoid marking the bridge as authenticated when the frame is not reachable.
  */
-export function sendToDme(type: string, payload?: unknown): void {
+export function sendToDme(type: string, payload?: unknown): boolean {
   const target = currentTarget
-  if (!target) return
-  target.contentWindow?.postMessage(
+  if (!target) {
+    if (__DEV__) {
+      console.log(`[dme-bridge] sendToDme(${type}) skipped: no current target`)
+    }
+    return false
+  }
+  const cw = target.contentWindow
+  if (!cw) {
+    if (__DEV__) {
+      console.log(
+        `[dme-bridge] sendToDme(${type}) skipped: contentWindow missing`,
+      )
+    }
+    return false
+  }
+  cw.postMessage(
     {protocol: DME_EMBED_PROTOCOL, type, payload},
     DME_EMBED_ORIGIN,
   )
+  if (__DEV__) {
+    console.log(`[dme-bridge] sendToDme(${type}) delivered`)
+  }
+  return true
 }
 
 /**
  * Deliver the session token to the embed. Shared by the DME_READY path and
  * the late-token recovery path so both behave identically. Returns whether a
- * token was actually available (and therefore delivered).
+ * token was actually available AND successfully posted to the iframe.
  */
 function deliverToken(
   getToken: () => DmeTokenPayload | null,
@@ -92,8 +110,24 @@ function deliverToken(
   tokenDeliveredRef: {current: boolean},
 ): boolean {
   const token = getToken()
-  if (!token) return false
-  sendToDme(DME_MSG.TOKEN, token)
+  if (!token) {
+    if (__DEV__) {
+      console.log('[dme-bridge] deliverToken: no token available yet')
+    }
+    return false
+  }
+  if (__DEV__) {
+    console.log('[dme-bridge] deliverToken: sending DME_TOKEN', {
+      did: token.did,
+      handle: token.handle,
+    })
+  }
+  const posted = sendToDme(DME_MSG.TOKEN, token)
+  if (!posted) {
+    // The frame is not reachable right now; leave the state machine unchanged
+    // so the next render / late-token recovery effect can retry.
+    return false
+  }
   tokenDeliveredRef.current = true
   // 'ready' means: the embed is alive AND we have handed it a session.
   // Immediately follow the token with a PING liveness probe so the transition
@@ -132,6 +166,9 @@ export function useDmeEmbedBridge(
   }
 
   const handleDmeReady = () => {
+    if (__DEV__) {
+      console.log('[dme-bridge] DME_READY received')
+    }
     // First DME_READY from the embed: cancel the watchdog that `onIframeLoad`
     // started — the embed came up in time.
     if (readyTimeoutRef.current !== undefined) {
@@ -216,16 +253,22 @@ export function useDmeEmbedBridge(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Registered once with the listener: message routing must check the iframe
-  // that is CURRENTLY mounted, and `sendToDme` (module-level) needs a target.
-  // Cleared on unmount.
+  // Keep the module-level send target in sync with whichever iframe instance
+  // is currently rendered. Runs after every render so a ref swap (e.g. React
+  // reconciler replacing the iframe node) is reflected immediately. Cleared on
+  // unmount.
   React.useEffect(() => {
     currentTarget = iframeRef.current
+    if (__DEV__) {
+      console.log(
+        '[dme-bridge] target synced',
+        currentTarget ? 'frame present' : 'no frame',
+      )
+    }
     return () => {
       currentTarget = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  })
 
   // READY watchdog. `onIframeLoad` (wired by the consumer into
   // `<iframe onLoad={...}>`) starts an 8s timer; if no DME_READY arrives while
@@ -234,6 +277,9 @@ export function useDmeEmbedBridge(
   // bfcache restores), and stacking timers would mark a healthy embed
   // unavailable when an old timer from a previous load fires.
   const onIframeLoad = () => {
+    if (__DEV__) {
+      console.log('[dme-bridge] iframe onLoad fired')
+    }
     // Re-sync the module-level send target: the iframe may have (re)mounted
     // after the bridge's mount effect ran, and `sendToDme` must have a live
     // target as soon as the frame loads.
@@ -244,9 +290,12 @@ export function useDmeEmbedBridge(
     readyTimeoutRef.current = window.setTimeout(() => {
       readyTimeoutRef.current = undefined
       if (statusRef.current === 'waiting') {
+        if (__DEV__) {
+          console.log('[dme-bridge] READY timeout, marking unavailable')
+        }
         setStatus('unavailable')
       }
-    }, DME_READY_TIMEOUT_MS) as unknown as number
+    }, DME_READY_TIMEOUT_MS)
   }
 
   // Late-token recovery. Runs after EVERY render (no dependency array): the
