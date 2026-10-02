@@ -5,6 +5,7 @@ import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
 import {RemoveScrollBar} from 'react-remove-scroll-bar'
 
+import {DME_MSG} from '#/lib/dme-embed/constants'
 import {sendToDme} from '#/lib/dme-embed/useDmeEmbedBridge'
 import {useDmeTokenProvider} from '#/lib/dme-embed/useDmeTokenProvider'
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
@@ -79,6 +80,38 @@ function useIsAtMessages(): boolean {
   return isAtMessages
 }
 
+/**
+ * Pushes the user's "chat-active" visibility state to the DME embed.
+ *
+ * The embed is keep-mounted but hidden via `display:none` when the user leaves
+ * /messages, so it cannot reliably detect that the user has left the chat
+ * screen on its own. We tell it explicitly, combining two signals:
+ *   - isAtMessages: are we on the /messages route right now?
+ *   - document.visibilityState: is the browser tab visible?
+ *
+ * A value of `active: false` means "the user is not looking at chat" and the
+ * embed should treat the currently-open conversation as unread for any future
+ * messages. We send on every change, and also once after the embed finishes
+ * its READY handshake (the initial route may already be /messages).
+ */
+function useDmeChatActive(isReady: boolean, isAtMessages: boolean) {
+  useEffect(() => {
+    if (!isReady) return
+    const active = isAtMessages && document.visibilityState === 'visible'
+    sendToDme(DME_MSG.CHAT_ACTIVE, {active})
+  }, [isReady, isAtMessages])
+
+  useEffect(() => {
+    if (!isReady) return
+    const handler = () => {
+      const active = isAtMessages && document.visibilityState === 'visible'
+      sendToDme(DME_MSG.CHAT_ACTIVE, {active})
+    }
+    document.addEventListener('visibilitychange', handler)
+    return () => document.removeEventListener('visibilitychange', handler)
+  }, [isReady, isAtMessages])
+}
+
 function ShellInner() {
   const navigator = useNavigation<NavigationProp>()
   const closeAllActiveElements = useCloseAllActiveElements()
@@ -89,9 +122,11 @@ function ShellInner() {
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
   const tokenProvider = useDmeTokenProvider({sendToDme})
+  const [dmeReady, setDmeReady] = useState(false)
 
   useComposerKeyboardShortcut()
   useIntentHandler()
+  useDmeChatActive(dmeReady, isAtMessages)
 
   useEffect(() => {
     const unsubscribe = navigator.addListener('state', () => {
@@ -109,6 +144,8 @@ function ShellInner() {
     if (prevDidRef.current !== did) {
       prevDidRef.current = did
       reportDmeUnread(null)
+      // The DME embed will remount on the new did and must re-handshake.
+      setDmeReady(false)
     }
   }, [currentAccount?.did])
 
@@ -156,6 +193,7 @@ function ShellInner() {
             key={currentAccount?.did ?? 'signed-out'}
             getToken={tokenProvider.getToken}
             onSessionInvalid={tokenProvider.onSessionInvalid}
+            onReady={() => setDmeReady(true)}
           />
         </View>
       )}

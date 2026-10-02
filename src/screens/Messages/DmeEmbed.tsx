@@ -23,6 +23,12 @@ export type DmeEmbedProps = {
    * (DME_SESSION_INVALID), e.g. to force a re-login.
    */
   onSessionInvalid: () => void
+  /**
+   * Invoked once the embed has sent DME_READY and a token has been delivered.
+   * The consumer can use this to send initial post-handshake state (e.g. the
+   * current chat-active visibility) without racing the iframe startup.
+   */
+  onReady?: () => void
 }
 
 /**
@@ -38,11 +44,20 @@ export type DmeEmbedProps = {
  * message copy button, `fullscreen` for the in-iframe video viewer, and
  * `autoplay` for message sounds and the muted video-preview autoplay.
  */
-export function DmeEmbed({getToken, onSessionInvalid}: DmeEmbedProps) {
+export function DmeEmbed({getToken, onSessionInvalid, onReady}: DmeEmbedProps) {
   const {_} = useLingui()
   const t = useTheme()
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const bridge = useDmeEmbedBridge({iframeRef, getToken, onSessionInvalid})
+
+  // Notify the consumer once the handshake has completed and the embed is
+  // authenticated. This is the right time to push one-way visibility state
+  // such as DME_CHAT_ACTIVE.
+  const wasReadyRef = useRef(false)
+  if (bridge.status === 'ready' && !wasReadyRef.current) {
+    wasReadyRef.current = true
+    onReady?.()
+  }
 
   // The iframe must be in the tree from the FIRST commit: the handshake is
   // driven BY the iframe (it sends DME_READY, and its `load` event starts the

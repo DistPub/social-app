@@ -25,6 +25,7 @@ export const DME_MSG = {
   UNREAD: 'DME_UNREAD',
   PING: 'DME_PING',
   PONG: 'DME_PONG',
+  CHAT_ACTIVE: 'DME_CHAT_ACTIVE',
 } as const
 
 /**

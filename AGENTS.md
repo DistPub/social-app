@@ -120,7 +120,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **网络协议与单一事实来源**
 
-- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
+- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
 - **`constants.ts` 是协议的单一事实来源**，与 dme 仓库的对接规格以它为准；消息名与 `dme-embed/v1` 版本字符串必须与 dme 侧逐字一致，不得自行改名或改值
 
 **新增文件（均为 web-only）**
@@ -133,7 +133,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **修改文件**
 
-- `src/view/shell/index.web.tsx` — **keep-mounted**：DME iframe 挂在 shell 层（navigator 之外），路由切换用 `display` 切换（`display: isAtMessages ? 'flex' : 'none'`）而非卸载；`key={currentAccount?.did}` 是唯一的合法重挂载点（账号切换）；did 变化时 `reportDmeUnread(null)` 重置角标
+- `src/view/shell/index.web.tsx` — **keep-mounted**：DME iframe 挂在 shell 层（navigator 之外），路由切换用 `display` 切换（`display: isAtMessages ? 'flex' : 'none'`）而非卸载；`key={currentAccount?.did}` 是唯一的合法重挂载点（账号切换）；did 变化时 `reportDmeUnread(null)` 重置角标。新增 `useDmeChatActive` 向 DME 推送 `DME_CHAT_ACTIVE`（payload `{active: boolean}`），解决 iframe 被隐藏后 DME 无法感知用户已离开聊天页面的问题
 - `src/view/shell/desktop/LeftNav.tsx` / `src/view/shell/bottom-bar/BottomBarWeb.tsx` / `src/Navigation.tsx` — 未读角标/标题叠加
 
 **关键约束 / 坑**
@@ -143,6 +143,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - **iframe 必须首帧挂载**（握手由 iframe 驱动），`waiting` 时 Loader 是 absolute overlay；`unavailable`/`degraded` 时渲染降级面板（`window.open` 新标签逃生门）
 - **无 `sandbox` 属性**（会阻断 dme 的 localStorage 持久化），`allow` 仅 `clipboard-write; fullscreen; autoplay`（复制消息 / iframe 内视频全屏 / 消息提示音与静音视频预览自动播放）
 - **未读数接管逻辑**：`dmeUnread === null` 时行为与旧逻辑完全一致；`!== null` 时由 dme 接管（`>10` 显示 `'10+'`，`0` 不显示）
+- **Chat Active 通知**：fatesky 在以下时机向 DME 发送 `DME_CHAT_ACTIVE`：`DME_READY` 握手完成后（初始状态）、用户进入/离开 `/messages` 路由时、`document.visibilityState` 变化时。有效状态 `active = isAtMessages && document.visibilityState === 'visible'`。DME 收到 `active: false` 后，应将当前打开会话的后续新消息计入未读，并通过 `DME_UNREAD` 重新上报；收到 `active: true` 后可按原有逻辑标记当前会话为已读。对接文档见 `docs/dme-chat-active-requirement.md`
 - **COEP/嵌入头现状（按实测记录，双方均无需改动）**：dme 侧保持 `Cross-Origin-Embedder-Policy: require-corp` + `Cross-Origin-Opener-Policy: same-origin`（嵌入不需要放宽 COEP，embed 与宿主仅经 `postMessage` 通信，不涉及跨源隔离资源加载）；dme 未设 `X-Frame-Options` 与 CSP `frame-ancestors`，故可被 iframe 嵌入。fatesky 侧**未设置任何 `Cross-Origin-*` 响应头**（`curl -sI https://app.hukoubook.com/` 仅见 `referrer-policy`），因此不存在"需要放宽 COEP"一说 —— 不要把降级面板归因于 COEP
 - **无法绕过的物理限制**：浏览器标签页切到后台会对 timer 降频，iframe 内的轮询/心跳会变慢 —— 不要写"后台也实时"的承诺
 
