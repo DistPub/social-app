@@ -8,6 +8,12 @@ import {
   DME_MSG,
   DME_READY_TIMEOUT_MS,
 } from '#/lib/dme-embed/constants'
+import {
+  clearDmeStorage,
+  loadDmeStorage,
+  removeDmeStorageItem,
+  setDmeStorageItem,
+} from '#/lib/dme-embed/dmeStorage'
 import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
 
 /**
@@ -128,6 +134,16 @@ function deliverToken(
     // so the next render / late-token recovery effect can retry.
     return false
   }
+  // Push the current account's DME storage data immediately after the token.
+  // The embed needs this to initialize its chat state — without it, a fresh
+  // iframe mount (account switch) would start with empty storage.
+  // NOTE: token rotation (useDmeTokenProvider 60s watcher) re-sends DME_TOKEN
+  // directly via sendToDme, bypassing deliverToken. That is CORRECT: same DID
+  // = same storage, no need to re-push STORAGE_DATA on rotation. Only a fresh
+  // handshake (iframe remount on account switch) triggers deliverToken, which
+  // is the only time storage needs to be re-pushed.
+  const entries = loadDmeStorage(token.did)
+  sendToDme(DME_MSG.STORAGE_DATA, {entries})
   tokenDeliveredRef.current = true
   // 'ready' means: the embed is alive AND we have handed it a session.
   // Immediately follow the token with a PING liveness probe so the transition
@@ -241,6 +257,39 @@ export function useDmeEmbedBridge(
         }
         case DME_MSG.PONG: {
           handleDmePong()
+          break
+        }
+        case DME_MSG.STORAGE_LOAD: {
+          const token = optionsRef.current.getToken()
+          if (token?.did) {
+            const entries = loadDmeStorage(token.did)
+            sendToDme(DME_MSG.STORAGE_DATA, {entries})
+          }
+          break
+        }
+        case DME_MSG.STORAGE_SET: {
+          const token = optionsRef.current.getToken()
+          if (!token?.did) break
+          const payload = event.data.payload as {key?: unknown, value?: unknown} | null
+          if (typeof payload?.key === 'string' && typeof payload?.value === 'string') {
+            setDmeStorageItem(token.did, payload.key, payload.value)
+          }
+          break
+        }
+        case DME_MSG.STORAGE_REMOVE: {
+          const token = optionsRef.current.getToken()
+          if (!token?.did) break
+          const payload = event.data.payload as {key?: unknown} | null
+          if (typeof payload?.key === 'string') {
+            removeDmeStorageItem(token.did, payload.key)
+          }
+          break
+        }
+        case DME_MSG.STORAGE_CLEAR: {
+          const token = optionsRef.current.getToken()
+          if (token?.did) {
+            clearDmeStorage(token.did)
+          }
           break
         }
       }

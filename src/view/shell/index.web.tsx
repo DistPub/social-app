@@ -6,6 +6,7 @@ import {useNavigation} from '@react-navigation/native'
 import {RemoveScrollBar} from 'react-remove-scroll-bar'
 
 import {DME_MSG} from '#/lib/dme-embed/constants'
+import {clearDmeStorage} from '#/lib/dme-embed/dmeStorage'
 import {sendToDme} from '#/lib/dme-embed/useDmeEmbedBridge'
 import {useDmeTokenProvider} from '#/lib/dme-embed/useDmeTokenProvider'
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
@@ -117,7 +118,7 @@ function ShellInner() {
   const closeAllActiveElements = useCloseAllActiveElements()
   const {state: policyUpdateState} = usePolicyUpdateContext()
   const welcomeModalControl = useWelcomeModal()
-  const {hasSession, currentAccount} = useSession()
+  const {accounts, hasSession, currentAccount} = useSession()
   const isAtMessages = useIsAtMessages()
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
@@ -148,6 +149,23 @@ function ShellInner() {
       setDmeReady(false)
     }
   }, [currentAccount?.did])
+
+  // Garbage-collect DME storage for accounts that were removed (removeAccount).
+  // logout/logoutEveryAccount do NOT trigger this — they only clear tokens,
+  // the accounts stay in the array, so DME data is preserved for re-login.
+  // This effect does NOT touch src/state/session/* — it reads the accounts
+  // array from useSession() and cleans up in the web shell layer only.
+  const prevAccountsRef = useRef(accounts)
+  useEffect(() => {
+    const prevDids = new Set(prevAccountsRef.current.map(a => a.did))
+    const currDids = new Set(accounts.map(a => a.did))
+    for (const did of prevDids) {
+      if (!currDids.has(did)) {
+        clearDmeStorage(did)
+      }
+    }
+    prevAccountsRef.current = accounts
+  }, [accounts])
 
   const drawerLayout = useCallback(
     ({children}: {children: React.ReactNode}) => (
