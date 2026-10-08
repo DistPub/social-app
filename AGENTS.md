@@ -120,7 +120,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **网络协议与单一事实来源**
 
-- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
+- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`/`DME_STORAGE_LOAD`/`DME_STORAGE_SET`/`DME_STORAGE_REMOVE`/`DME_STORAGE_CLEAR`/`DME_STORAGE_DATA`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
 - **`constants.ts` 是协议的单一事实来源**，与 dme 仓库的对接规格以它为准；消息名与 `dme-embed/v1` 版本字符串必须与 dme 侧逐字一致，不得自行改名或改值
 
 **新增文件（均为 web-only）**
@@ -129,6 +129,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - `src/lib/dme-embed/useDmeTokenProvider.ts` — `useDmeTokenProvider({sendToDme})`，提供 `getToken`/`onSessionInvalid`
 - `src/state/dme/useDmeUnreadCount.ts` — 纯内存未读 store（`useSyncExternalStore`），导出 `reportDmeUnread`；`null` 表示 dme 尚未上报
 - `src/screens/Messages/DmeEmbed.tsx` — web-only iframe 容器
+- `src/lib/dme-embed/dmeStorage.ts` — per-DID localStorage 存储读写模块（load/set/remove/clear/clearAll），含 IS_WEB 守卫确保 native 安全
 - `src/screens/Messages/ChatList.web.tsx` — `.web.tsx` 平台覆盖，**空占位**（真正的 embed 挂在 shell 层），仅保留 `MessagesScreen` 导出；**删除此文件即回退旧 web 私信列表**
 
 **修改文件**
