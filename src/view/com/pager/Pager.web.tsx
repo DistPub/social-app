@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {View} from 'react-native'
+import {type GestureResponderEvent, View} from 'react-native'
 import {flushSync} from 'react-dom'
 
 import {s} from '#/lib/styles'
@@ -40,6 +40,82 @@ export function Pager({
   const [selectedPage, setSelectedPage] = useState(initialPage)
   const scrollYs = useRef<Array<number | null>>([])
   const anchorRef = useRef(null)
+  const childCount = Children.count(children)
+
+  const swipe = useRef({
+    touching: false,
+    skip: false,
+    startX: 0,
+    startY: 0,
+    fired: false,
+  })
+
+  const isHorizontalScrollable = (target: any): boolean => {
+    let el: Element | null = target
+    while (el && el !== document.body) {
+      if (el.scrollWidth > el.clientWidth) {
+        const overflowX = getComputedStyle(el).overflowX
+        if (overflowX === 'auto' || overflowX === 'scroll') {
+          return true
+        }
+      }
+      el = el.parentElement
+    }
+    return false
+  }
+
+  const readTouch = (e: GestureResponderEvent) => {
+    const nativeEvent = e.nativeEvent as any
+    const touch = nativeEvent?.changedTouches?.[0] ?? nativeEvent?.touches?.[0]
+    return touch ? {x: touch.pageX ?? 0, y: touch.pageY ?? 0} : null
+  }
+
+  const onTouchStart = (e: GestureResponderEvent) => {
+    if (childCount < 2) return
+    const point = readTouch(e)
+    if (!point) return
+    const target = (e.nativeEvent as any)?.target as Element | undefined
+    swipe.current = {
+      touching: true,
+      skip: target ? isHorizontalScrollable(target) : false,
+      startX: point.x,
+      startY: point.y,
+      fired: false,
+    }
+  }
+
+  const onTouchMove = () => {}
+
+  const onTouchEnd = (e: GestureResponderEvent) => {
+    const state = swipe.current
+    if (!state.touching || state.skip || state.fired) {
+      swipe.current.touching = false
+      return
+    }
+    swipe.current.touching = false
+    const point = readTouch(e)
+    if (!point) return
+    const dx = point.x - state.startX
+    const dy = point.y - state.startY
+
+    if (Math.abs(dx) <= 48 || Math.abs(dx) <= 2 * Math.abs(dy)) return
+
+    if (dx > 0) {
+      if (selectedPage <= 0) return
+      swipe.current.fired = true
+      onTabBarSelect(selectedPage - 1)
+    } else {
+      if (selectedPage >= childCount - 1) return
+      swipe.current.fired = true
+      onTabBarSelect(selectedPage + 1)
+    }
+  }
+
+  const onTouchCancel = () => {
+    swipe.current.touching = false
+    swipe.current.skip = false
+    swipe.current.fired = false
+  }
 
   useImperativeHandle(ref, () => ({
     setPage: (index: number) => {
@@ -81,7 +157,12 @@ export function Pager({
   )
 
   return (
-    <View style={s.hContentRegion}>
+    <View
+      style={s.hContentRegion}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}>
       {renderTabBar({
         selectedPage,
         tabBarAnchor: <View ref={anchorRef} />,
