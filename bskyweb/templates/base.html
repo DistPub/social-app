@@ -98,6 +98,12 @@
       --background: #151D28;
       --backgroundLight: #2C3A4E;
     }
+    :root {
+      --ios-status-bar: env(safe-area-inset-top);
+    }
+    #root {
+      padding-top: var(--ios-status-bar);
+    }
     #splash {
       display: flex;
       position: fixed;

@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react'
 import {StyleSheet, TouchableWithoutFeedback, View} from 'react-native'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
@@ -122,6 +123,11 @@ function ShellInner() {
   const isAtMessages = useIsAtMessages()
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
+  // Keep the DME embed clear of the notch/status bar on notched devices. It is
+  // `position: fixed`, so it escapes the app-level `#root` safe-area padding
+  // that every other tab screen relies on — it must reserve the top inset
+  // itself, matching the Home header (also fixed).
+  const {top: topInset} = useSafeAreaInsets()
   const tokenProvider = useDmeTokenProvider({sendToDme})
   const [dmeReady, setDmeReady] = useState(false)
 
@@ -205,7 +211,7 @@ function ShellInner() {
                   ],
                 }
               : {left: 0, right: 0, bottom: DME_MOBILE_BOTTOM_INSET},
-            {display: isAtMessages ? 'flex' : 'none'},
+            {display: isAtMessages ? 'flex' : 'none', top: topInset},
           ]}>
           <DmeEmbed
             key={currentAccount?.did ?? 'signed-out'}

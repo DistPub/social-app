@@ -1,6 +1,7 @@
 import {type JSX} from 'react'
 import {View} from 'react-native'
 import Animated from 'react-native-reanimated'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
@@ -12,9 +13,8 @@ import {emitSoftReset} from '#/state/events'
 import {useSession} from '#/state/session'
 import {useShellLayout} from '#/state/shell/shell-layout'
 import {Logo} from '#/view/icons/Logo'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useTheme, web} from '#/alf'
 import {ButtonIcon} from '#/components/Button'
-import useIOSStatusBarFix from '#/components/hooks/useFixIos'
 import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -25,7 +25,7 @@ export function HomeHeaderLayoutMobile({
   children: React.ReactNode
   tabBarAnchor: JSX.Element | null | undefined
 }) {
-  const top = useIOSStatusBarFix()
+  const {top: topInset} = useSafeAreaInsets()
   const t = useTheme()
   const {_} = useLingui()
   const {headerHeight} = useShellLayout()
@@ -43,7 +43,12 @@ export function HomeHeaderLayoutMobile({
           top: 0,
           left: 0,
           right: 0,
-          paddingTop: top,
+          // This header is `position: fixed` on web, so it escapes the
+          // app-level `#root` safe-area padding from `index.html` and must
+          // reserve the top inset itself. On native this view is absolutely
+          // positioned inside the shell (which already applies `insets.top`),
+          // so no extra padding there — hence `web(...) ?? 0`.
+          paddingTop: web(topInset) ?? 0,
         },
         headerMinimalShellTransform,
       ]}

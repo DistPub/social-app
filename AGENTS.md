@@ -247,6 +247,16 @@ const styles = [
 ]
 ```
 
+### 顶部安全区（刘海屏）单轨机制
+
+iOS 刘海屏（含状态栏 / 灵动岛）上，所有 tab 屏幕的顶部必须预留安全区边距，**但只能有一轨**，否则会双倍叠加导致顶边距过大。
+
+- **Web 单轨**：`web/index.html`（及 `bskyweb/templates/base.html`）里 `#root { padding-top: var(--ios-status-bar) }`，`--ios-status-bar: env(safe-area-inset-top)`。整个应用根容器统一吃掉刘海高度，**所有普通流内容的顶边距都靠这一轨**。
+- **Native 单轨**：native 没有 `#root` 那层 padding，所以各屏幕靠 `Layout.Screen` 的 `native({paddingTop: insets.top})`（`insets = useSafeAreaInsets()`）自己补。**该 padding 只在 native 生效，web 上不叠加**（否则与 `#root` 那轨双倍）。
+- **`fixed` 元素必须自补**：`a.fixed` 在 web 是 `position:fixed`（脱离 `#root`，不吃那层 padding），在 native 是 `position:absolute`（相对已含 `insets.top` 的 shell 壳层，不可再补）。所以 web 上的 fixed 元素要用 `useSafeAreaInsets().top` 配 `web(top) ?? 0` 自己补顶边距，native 上 `web()` 返回 `undefined` → `0`。目前两处：Home header（`HomeHeaderLayoutMobile.tsx`）、私信 DME 嵌入层（`src/view/shell/index.web.tsx` 的 `dmeLayer`，`top: topInset`）。
+- **不再使用的 hack**：`useFixIos` / `useIOSStatusBarFix`（曾用 JS 读 `--ios-status-bar` CSS 变量给 Home header 补）已删除；新代码统一用 `useSafeAreaInsets` + `web()`/`native()`。
+- **回归红线**：任何屏幕/组件不要再单独加 `paddingTop: insets.top`（web 会双倍）。需要顶边距时区分——普通流内容靠 `#root`；`fixed` 元素用 `web(insets.top) ?? 0`。
+
 ### 入口与启动流程
 
 1. `index.web.js` → 导入 polyfills → `registerRootComponent(App)`

@@ -1,6 +1,11 @@
 import {forwardRef, memo, useContext, useMemo} from 'react'
-import {StyleSheet, View, type ViewProps, type ViewStyle} from 'react-native'
-import {type StyleProp} from 'react-native'
+import {
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewProps,
+  type ViewStyle,
+} from 'react-native'
 import {
   KeyboardAwareScrollView,
   type KeyboardAwareScrollViewProps,
@@ -14,6 +19,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {useShellLayout} from '#/state/shell/shell-layout'
 import {
   atoms as a,
+  native,
   useBreakpoints,
   useLayoutBreakpoints,
   useTheme,
@@ -41,11 +47,22 @@ export const Screen = memo(function Screen({
   ...props
 }: ScreenProps) {
   const {top} = useSafeAreaInsets()
+  // Top safe area is single-track per platform:
+  //  - native: no app-level padding exists, so every screen reserves
+  //    `insets.top` itself here.
+  //  - web: `index.html` already applies `padding-top: env(safe-area-inset-top)`
+  //    to `#root` globally. `useSafeAreaInsets()` returns that same env value on
+  //    web, so adding it here too would double the inset on notched devices.
+  //    Web therefore relies on the #root padding alone.
   return (
     <>
       {IS_WEB && <WebCenterBorders />}
       <View
-        style={[a.util_screen_outer, {paddingTop: noInsetTop ? 0 : top}, style]}
+        style={[
+          a.util_screen_outer,
+          native({paddingTop: noInsetTop ? 0 : top}),
+          style,
+        ]}
         {...props}
       />
     </>
