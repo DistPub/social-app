@@ -48,6 +48,20 @@ export type UseDmeEmbedBridgeOptions = {
   iframeRef: React.RefObject<HTMLIFrameElement | null>
   getToken: () => DmeTokenPayload | null
   onSessionInvalid: () => void
+  /**
+   * Invoked when the embed asks fatesky to route its OWN SPA to a site-relative
+   * `path` (a fatesky-internal link clicked inside chat). The caller is
+   * responsible for the actual navigation (e.g. react-navigation). The `path`
+   * is pre-validated by `isValidNavigatePath` and is guaranteed safe to route.
+   */
+  onNavigate: (path: string) => void
+  /**
+   * Invoked when the embed asks fatesky to present an EXTERNAL `url` in a web
+   * view (e.g. iOS WKWebView where `window.open` cannot spawn a context). The
+   * `url` is pre-validated by `isValidExternalUrl` and is guaranteed to be an
+   * `http(s)` absolute URL.
+   */
+  onOpenExternalUrl: (url: string) => void
 }
 
 export type UseDmeEmbedBridgeResult = {
@@ -103,6 +117,48 @@ export function sendToDme(type: string, payload?: unknown): boolean {
     console.log(`[dme-bridge] sendToDme(${type}) delivered`)
   }
   return true
+}
+
+/**
+ * Validate a `DME_NAVIGATE` `path` before routing fatesky's own SPA to it.
+ *
+ * The path MUST be a site-relative route — never a protocol-relative
+ * redirection (`//evil.com`), never a full URL that smuggles a foreign host,
+ * never containing backslashes. We resolve against a fixed base origin and
+ * reject anything that pulls a non-base `host` or a non-https `scheme` out of
+ * the string. (`app.hukoubook.com` is fatesky's canonical host per the dme
+ * link requirement; a legit site-relative path resolves back to exactly this
+ * base, so a differing host means the path tried to escape it.)
+ */
+function isValidNavigatePath(path: unknown): path is string {
+  if (typeof path !== 'string') return false
+  if (!path.startsWith('/')) return false
+  if (path.startsWith('//')) return false // protocol-relative escape
+  if (path.includes('\\')) return false
+  try {
+    const resolved = new URL(path, 'https://app.hukoubook.com')
+    if (resolved.protocol !== 'https:') return false
+    if (resolved.host !== 'app.hukoubook.com') return false
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Validate a `DME_OPEN_URL` `url` before presenting it in an external web
+ * view. Only real `http(s)` absolute URLs are allowed; `javascript:`,
+ * `data:`, `file:`, etc. are rejected (defense-in-depth on top of the dme-side
+ * filter).
+ */
+function isValidExternalUrl(url: unknown): url is string {
+  if (typeof url !== 'string') return false
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -270,8 +326,14 @@ export function useDmeEmbedBridge(
         case DME_MSG.STORAGE_SET: {
           const token = optionsRef.current.getToken()
           if (!token?.did) break
-          const payload = event.data.payload as {key?: unknown, value?: unknown} | null
-          if (typeof payload?.key === 'string' && typeof payload?.value === 'string') {
+          const payload = event.data.payload as {
+            key?: unknown
+            value?: unknown
+          } | null
+          if (
+            typeof payload?.key === 'string' &&
+            typeof payload?.value === 'string'
+          ) {
             setDmeStorageItem(token.did, payload.key, payload.value)
           }
           break
@@ -290,6 +352,42 @@ export function useDmeEmbedBridge(
           if (token?.did) {
             clearDmeStorage(token.did)
           }
+          break
+        }
+        case DME_MSG.NAVIGATE: {
+          // The embed clicked a fatesky-internal link and wants the host app's
+          // SPA to route there. MUST keep working while the iframe is
+          // display:none — the listener runs unconditionally, so no gating.
+          const payload = event.data.payload as {path?: unknown} | null
+          if (!isValidNavigatePath(payload?.path)) {
+            if (__DEV__) {
+              console.log('[dme-bridge] DME_NAVIGATE rejected: invalid path')
+            }
+            break
+          }
+          const path = payload.path
+          if (__DEV__) {
+            console.log('[dme-bridge] DME_NAVIGATE received', {path})
+          }
+          optionsRef.current.onNavigate(path)
+          break
+        }
+        case DME_MSG.OPEN_URL: {
+          // The embed clicked an external link in an environment (iOS
+          // WKWebView) where it cannot spawn a browsing context itself; the
+          // host app presents the URL. Desktop just opens it like any link.
+          const payload = event.data.payload as {url?: unknown} | null
+          if (!isValidExternalUrl(payload?.url)) {
+            if (__DEV__) {
+              console.log('[dme-bridge] DME_OPEN_URL rejected: invalid url')
+            }
+            break
+          }
+          const url = payload.url
+          if (__DEV__) {
+            console.log('[dme-bridge] DME_OPEN_URL received', {url})
+          }
+          optionsRef.current.onOpenExternalUrl(url)
           break
         }
       }

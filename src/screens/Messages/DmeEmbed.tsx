@@ -29,6 +29,16 @@ export type DmeEmbedProps = {
    * current chat-active visibility) without racing the iframe startup.
    */
   onReady?: () => void
+  /**
+   * See `UseDmeEmbedBridgeOptions.onNavigate`. Wired through from the consumer
+   * (shell); the bridge pre-validates the path before calling this.
+   */
+  onNavigate: (path: string) => void
+  /**
+   * See `UseDmeEmbedBridgeOptions.onOpenExternalUrl`. Wired through from the
+   * consumer (shell); the bridge pre-validates the url before calling this.
+   */
+  onOpenExternalUrl: (url: string) => void
 }
 
 /**
@@ -44,11 +54,23 @@ export type DmeEmbedProps = {
  * message copy button, `fullscreen` for the in-iframe video viewer, and
  * `autoplay` for message sounds and the muted video-preview autoplay.
  */
-export function DmeEmbed({getToken, onSessionInvalid, onReady}: DmeEmbedProps) {
+export function DmeEmbed({
+  getToken,
+  onSessionInvalid,
+  onReady,
+  onNavigate,
+  onOpenExternalUrl,
+}: DmeEmbedProps) {
   const {_} = useLingui()
   const t = useTheme()
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const bridge = useDmeEmbedBridge({iframeRef, getToken, onSessionInvalid})
+  const bridge = useDmeEmbedBridge({
+    iframeRef,
+    getToken,
+    onSessionInvalid,
+    onNavigate,
+    onOpenExternalUrl,
+  })
 
   // Notify the consumer once the handshake has completed and the embed is
   // authenticated. This is the right time to push one-way visibility state

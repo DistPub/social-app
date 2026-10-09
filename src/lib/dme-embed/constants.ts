@@ -26,11 +26,13 @@ export const DME_MSG = {
   PING: 'DME_PING',
   PONG: 'DME_PONG',
   CHAT_ACTIVE: 'DME_CHAT_ACTIVE',
-  STORAGE_LOAD: 'DME_STORAGE_LOAD',     // DME → fatesky: 请求加载当前账号全部存储
-  STORAGE_SET: 'DME_STORAGE_SET',       // DME → fatesky: 写入一个 key-value
+  STORAGE_LOAD: 'DME_STORAGE_LOAD', // DME → fatesky: 请求加载当前账号全部存储
+  STORAGE_SET: 'DME_STORAGE_SET', // DME → fatesky: 写入一个 key-value
   STORAGE_REMOVE: 'DME_STORAGE_REMOVE', // DME → fatesky: 删除一个 key
-  STORAGE_CLEAR: 'DME_STORAGE_CLEAR',   // DME → fatesky: 清空当前账号存储
-  STORAGE_DATA: 'DME_STORAGE_DATA',     // fatesky → DME: 返回存储数据（响应 LOAD + 主动推送）
+  STORAGE_CLEAR: 'DME_STORAGE_CLEAR', // DME → fatesky: 清空当前账号存储
+  STORAGE_DATA: 'DME_STORAGE_DATA', // fatesky → DME: 返回存储数据（响应 LOAD + 主动推送）
+  NAVIGATE: 'DME_NAVIGATE', // DME → fatesky: 请求 fatesky SPA 跳转到 path（站内链接）
+  OPEN_URL: 'DME_OPEN_URL', // DME → fatesky: 请求拉起网页视图打开外部 url（iOS 外链）
 } as const
 
 /**

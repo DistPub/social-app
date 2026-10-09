@@ -3,7 +3,7 @@ import {StyleSheet, TouchableWithoutFeedback, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
-import {useNavigation} from '@react-navigation/native'
+import {CommonActions, useNavigation} from '@react-navigation/native'
 import {RemoveScrollBar} from 'react-remove-scroll-bar'
 
 import {DME_MSG} from '#/lib/dme-embed/constants'
@@ -51,6 +51,7 @@ import {NoAccessScreen} from '#/ageAssurance/components/NoAccessScreen'
 import {RedirectOverlay} from '#/ageAssurance/components/RedirectOverlay'
 import {PassiveAnalytics} from '#/analytics/PassiveAnalytics'
 import {FlatNavigator, RoutesContainer} from '#/Navigation'
+import {router} from '#/routes'
 import {Composer} from './Composer.web'
 import {DrawerContent} from './Drawer'
 
@@ -135,6 +136,27 @@ function ShellInner() {
   useIntentHandler()
   useDmeChatActive(dmeReady, isAtMessages)
 
+  // DME link handling (DME_NAVIGATE / DME_OPEN_URL). The bridge pre-validates
+  // `path`/`url` against injection (see useDmeEmbedBridge) before calling
+  // these, so they are safe to act on directly. The listener in the bridge is
+  // unconditional, so these also fire while the iframe is display:none.
+  const handleDmeNavigate = useCallback(
+    (path: string) => {
+      // `matchPath` parses the query string into route params and drops the
+      // hash — the same path→route mapping the app uses for deep links. The
+      // SPA jump is imperative (no full reload, no new window).
+      const [name, params] = router.matchPath(path)
+      navigator.dispatch(CommonActions.navigate(name, params))
+    },
+    [navigator],
+  )
+
+  const handleDmeOpenExternalUrl = useCallback((url: string) => {
+    // New tab on the web; the iOS WKWebView wrapper intercepts `window.open`
+    // and presents the URL in its own web view (e.g. SFSafariViewController).
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }, [])
+
   useEffect(() => {
     const unsubscribe = navigator.addListener('state', () => {
       closeAllActiveElements()
@@ -218,6 +240,8 @@ function ShellInner() {
             getToken={tokenProvider.getToken}
             onSessionInvalid={tokenProvider.onSessionInvalid}
             onReady={() => setDmeReady(true)}
+            onNavigate={handleDmeNavigate}
+            onOpenExternalUrl={handleDmeOpenExternalUrl}
           />
         </View>
       )}
