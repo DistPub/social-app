@@ -80,7 +80,7 @@ export function toShortUrl(url: string): string {
 
 export function toShareUrl(url: string): string {
   if (!url.startsWith('https')) {
-    const urlp = new URL('https://bsky.app')
+    const urlp = new URL('https://app.hukoubook.com')
     urlp.pathname = url
     url = urlp.toString()
   }
@@ -92,7 +92,10 @@ export function toBskyAppUrl(url: string): string {
 }
 
 export function isBskyAppUrl(url: string): boolean {
-  return url.startsWith('https://bsky.app/') || url.startsWith('https://app.hukoubook.com/')
+  return (
+    url.startsWith('https://bsky.app/') ||
+    url.startsWith('https://app.hukoubook.com/')
+  )
 }
 
 export function isRelativeUrl(url: string): boolean {

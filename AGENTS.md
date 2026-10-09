@@ -174,7 +174,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - 使用 Echo v4 Web 框架，路由定义在 `bskyweb/cmd/bskyweb/server.go`
 - RSS 渲染逻辑在 `bskyweb/cmd/bskyweb/rss.go`
 - 路由支持 handle 和 DID：`/profile/:handleOrDID/feed/:rkey/rss`、`/profile/:handleOrDID/rss`
-- 本地运行：`cd bskyweb && go run ./cmd/bskyweb serve --appview-host=https://public.api.bsky.app`
+- 本地运行：`cd bskyweb && go run ./cmd/bskyweb serve --appview-host=https://fatesky.hukoubook.com`
 - 编译：`cd bskyweb && go build -o bskyweb ./cmd/bskyweb`
 - `bun run build-web` 先构建 SPA bundle，再由 bskyweb serve 静态文件
 
@@ -190,6 +190,15 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - **禁止改动**：`bskyembed/snippet/embed.ts` 中的 widget 契约标识符（`window.bluesky`、`data-bluesky-uri`、`bluesky-embed` 类名、`BSKY_DEV_EMBED_URL`）；改域名只改 `EMBED_URL` 死值；oembed snippet 的 `bluesky-embed` class 与 widget 的 `data-bluesky-*` 选择器必须配对，勿重命名
 - 域名单一事实来源：`bskyembed/snippet/embed.ts`（`EMBED_URL`）、`bskyembed/src/screens/landing.tsx`（`EMBED_SERVICE`）、`src/lib/constants.ts`（`EMBED_SERVICE`）、`bskyweb/cmd/bskyweb/embed.go`（`EMBED_WIDGET_URL`）、`bskyweb/post.html` 的 oembed 自动发现 link —— 五处必须同步为 `fatesky-ssr.hukoubook.com`
 - 详细 oEmbed 规格见 `bskyweb/README.embed.md`
+
+#### fatesky 品牌化 / 域名迁移（embed 卡片）
+
+embed 卡片已完成 fatesky 品牌化，旧 Bluesky 资产移除：
+
+- **卡片图标**：`bskyembed/assets/fatesky-logo.svg`（从 `bskyweb/templates/base.html` splash 内联 SVG 提取的 fatesky 品牌标）。`bskyembed/assets/logo.svg`、`logo_full_name.svg`（旧 Bluesky 蓝蝴蝶 / 字样）已删除。引用点：`bskyembed/src/components/post.tsx`（贴文卡片右下角）、`bskyembed/src/screens/post.tsx`（PwiOptOut/ErrorMessage 右上角）、`bskyembed/src/screens/landing.tsx`（落地页顶部）
+- **embed AppView host**：`public.api.bsky.app` → `fatesky.hukoubook.com`。影响 `bskyembed/src/screens/{landing,post}.tsx`（AtpAgent `service`）、`bskyembed/{index,post}.html` 与 `bskyweb/embedr-templates/{postEmbed,home}.html` 的 `preconnect`、`bskyweb/example.env` 的 `ATP_APPVIEW_HOST`
+- **嵌入贴文 snippet 链接**：`src/lib/strings/url-helpers.ts` 的 `toShareUrl` 相对路径基线 `https://bsky.app` → `https://app.hukoubook.com`（`src/components/dialogs/Embed.tsx` 生成的 `bluesky-embed` 代码片段里作者 handle 链接与时间链接由此生成；share 菜单等其它 `toShareUrl` 调用点一并对齐）
+- **embed 落地页输入校验**：`bskyembed/src/screens/landing.tsx` 的 `urlp.hostname.endsWith('bsky.app')` → `endsWith('app.hukoubook.com')`，`DEFAULT_POST` 示例 URL 同步为 `app.hukoubook.com`
 
 ## 测试
 

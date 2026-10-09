@@ -6,7 +6,7 @@ import {
 } from '@atproto/api'
 import {h} from 'preact'
 
-import logo from '../../assets/logo_full_name.svg'
+import logo from '../../assets/fatesky-logo.svg'
 import {Like as LikeIcon} from '../icons/Like'
 import {Reply as ReplyIcon} from '../icons/Reply'
 import {Repost as RepostIcon} from '../icons/Repost'

@@ -5,7 +5,7 @@ import {h, render} from 'preact'
 import {useEffect, useMemo, useRef, useState} from 'preact/hooks'
 
 import arrowBottom from '../../assets/arrowBottom_stroke2_corner0_rounded.svg'
-import logo from '../../assets/logo.svg'
+import logo from '../../assets/fatesky-logo.svg'
 import {
   assertColorModeValues,
   ColorModeValues,
@@ -18,7 +18,7 @@ import * as bsky from '../types/bsky'
 import {niceDate} from '../util/nice-date'
 
 const DEFAULT_POST =
-  'https://bsky.app/profile/did:plc:vjug55kidv6sye7ykr5faxxn/post/3jzn6g7ixgq2y'
+  'https://app.hukoubook.com/profile/did:plc:vjug55kidv6sye7ykr5faxxn/post/3jzn6g7ixgq2y'
 const DEFAULT_URI =
   'at://did:plc:vjug55kidv6sye7ykr5faxxn/app.bsky.feed.post/3jzn6g7ixgq2y'
 
@@ -31,7 +31,7 @@ if (!root) throw new Error('No root element')
 initSystemColorMode()
 
 const agent = new AtpAgent({
-  service: 'https://public.api.bsky.app',
+  service: 'https://fatesky.hukoubook.com',
 })
 
 render(<LandingPage />, root)
@@ -59,7 +59,7 @@ function LandingPage() {
           } else {
             try {
               const urlp = new URL(uri)
-              if (!urlp.hostname.endsWith('bsky.app')) {
+              if (!urlp.hostname.endsWith('app.hukoubook.com')) {
                 throw new Error('Invalid hostname')
               }
               const split = urlp.pathname.slice(1).split('/')

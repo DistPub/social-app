@@ -3,7 +3,7 @@ import '../index.css'
 import {AppBskyFeedDefs, AtpAgent} from '@atproto/api'
 import {h, render} from 'preact'
 
-import logo from '../../assets/logo.svg'
+import logo from '../../assets/fatesky-logo.svg'
 import {applyTheme, initSystemColorMode} from '../color-mode'
 import {Container} from '../components/container'
 import {Link} from '../components/link'
@@ -14,7 +14,7 @@ const root = document.getElementById('app')
 if (!root) throw new Error('No root element')
 
 const agent = new AtpAgent({
-  service: 'https://public.api.bsky.app',
+  service: 'https://fatesky.hukoubook.com',
 })
 
 const uri = `at://${window.location.pathname.slice('/embed/'.length)}`
