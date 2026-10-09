@@ -9,6 +9,11 @@ import {
   DME_READY_TIMEOUT_MS,
 } from '#/lib/dme-embed/constants'
 import {
+  consumeDmeShare,
+  registerDmeShareFlushHandler,
+  setDmeShareBridgeReady,
+} from '#/lib/dme-embed/dmeShare'
+import {
   clearDmeStorage,
   loadDmeStorage,
   removeDmeStorageItem,
@@ -120,6 +125,19 @@ export function sendToDme(type: string, payload?: unknown): boolean {
 }
 
 /**
+ * Flush any buffered "share post via DM" intent to the embed. Owned by the
+ * bridge (it has `sendToDme`); registered with the dmeShare store on mount and
+ * invoked (a) when the embed becomes ready and (b) immediately when a share is
+ * requested while already ready. Sending is a no-op if no intent is buffered
+ * or the frame is not reachable.
+ */
+function flushDmeShare() {
+  const pending = consumeDmeShare()
+  if (!pending) return
+  sendToDme(DME_MSG.SHARE, pending)
+}
+
+/**
  * Validate a `DME_NAVIGATE` `path` before routing fatesky's own SPA to it.
  *
  * The path MUST be a site-relative route — never a protocol-relative
@@ -205,6 +223,11 @@ function deliverToken(
   // Immediately follow the token with a PING liveness probe so the transition
   // to 'active' does not have to wait a full 4.5-minute keepalive interval.
   setStatus('ready')
+  // The embed is now authenticated and listening: mark the share bridge ready
+  // so any pending DME_SHARE intent (buffered before the handshake completed)
+  // is flushed. This runs on BOTH the DME_READY path and the late-token
+  // recovery path, so a share requested before auth is never lost.
+  setDmeShareBridgeReady(true)
   sendToDme(DME_MSG.PING)
   return true
 }
@@ -492,6 +515,18 @@ export function useDmeEmbedBridge(
         window.clearTimeout(readyTimeoutRef.current)
         readyTimeoutRef.current = undefined
       }
+    }
+  }, [])
+
+  // Register the share-flush routine with the dmeShare store while mounted, so
+  // a `requestDmeShare` from anywhere (e.g. the post share menu) can reach the
+  // embed. On unmount, both detach the handler and drop the ready flag so a
+  // remounted/late frame can never be messaged through a stale closure.
+  React.useEffect(() => {
+    registerDmeShareFlushHandler(flushDmeShare)
+    return () => {
+      registerDmeShareFlushHandler(null)
+      setDmeShareBridgeReady(false)
     }
   }, [])
 

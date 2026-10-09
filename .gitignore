@@ -130,3 +130,6 @@ bskyweb/static/media/*.svg
 bskyweb/static/media/*.cjs
 .omo/
 .workbuddy/
+
+# docs: 本地保留，不纳入版本控制
+docs/

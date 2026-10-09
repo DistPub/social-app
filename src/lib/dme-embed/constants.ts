@@ -33,6 +33,7 @@ export const DME_MSG = {
   STORAGE_DATA: 'DME_STORAGE_DATA', // fatesky → DME: 返回存储数据（响应 LOAD + 主动推送）
   NAVIGATE: 'DME_NAVIGATE', // DME → fatesky: 请求 fatesky SPA 跳转到 path（站内链接）
   OPEN_URL: 'DME_OPEN_URL', // DME → fatesky: 请求拉起网页视图打开外部 url（iOS 外链）
+  SHARE: 'DME_SHARE', // fatesky → DME: 把帖子链接交给 DME，由 DME 决定如何转发
 } as const
 
 /**

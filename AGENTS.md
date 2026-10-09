@@ -120,7 +120,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **网络协议与单一事实来源**
 
-- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`/`DME_STORAGE_LOAD`/`DME_STORAGE_SET`/`DME_STORAGE_REMOVE`/`DME_STORAGE_CLEAR`/`DME_STORAGE_DATA`/`DME_NAVIGATE`/`DME_OPEN_URL`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
+- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`/`DME_STORAGE_LOAD`/`DME_STORAGE_SET`/`DME_STORAGE_REMOVE`/`DME_STORAGE_CLEAR`/`DME_STORAGE_DATA`/`DME_NAVIGATE`/`DME_OPEN_URL`/`DME_SHARE`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
 - **`constants.ts` 是协议的单一事实来源**，与 dme 仓库的对接规格以它为准；消息名与 `dme-embed/v1` 版本字符串必须与 dme 侧逐字一致，不得自行改名或改值
 
 **新增文件（均为 web-only）**
@@ -130,6 +130,8 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - `src/state/dme/useDmeUnreadCount.ts` — 纯内存未读 store（`useSyncExternalStore`），导出 `reportDmeUnread`；`null` 表示 dme 尚未上报
 - `src/screens/Messages/DmeEmbed.tsx` — web-only iframe 容器
 - `src/lib/dme-embed/dmeStorage.ts` — per-DID localStorage 存储读写模块（load/set/remove/clear/clearAll），含 IS_WEB 守卫确保 native 安全
+- `src/lib/dme-embed/dmeShare.ts` — 「通过私信发送」的模块级单槽缓冲（`requestDmeShare`/`consumeDmeShare`/`setDmeShareBridgeReady`/`registerDmeShareFlushHandler`），套路同 `useDmeUnreadCount`；保证 DME 未握手时点击分享不丢失（缓存至 READY 后 flush）
+- `src/lib/embed-snippet.ts` — `buildEmbedSnippet()`：帖子 HTML embed 片段生成的**单一事实来源**（原在 `Embed.tsx` 内联），供「Embed post」对话框与分享流程共用，与 bskyembed landing.tsx 保持 byte 兼容；`formattedTimestamp` 需调用方传 `niceDate(i18n, timestamp)`
 - `src/screens/Messages/ChatList.web.tsx` — `.web.tsx` 平台覆盖，**空占位**（真正的 embed 挂在 shell 层），仅保留 `MessagesScreen` 导出；**删除此文件即回退旧 web 私信列表**
 
 **修改文件**
@@ -145,6 +147,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - **无 `sandbox` 属性**（会阻断 dme 的 localStorage 持久化），`allow` 仅 `clipboard-write; fullscreen; autoplay`（复制消息 / iframe 内视频全屏 / 消息提示音与静音视频预览自动播放）
 - **未读数接管逻辑**：`dmeUnread === null` 时行为与旧逻辑完全一致；`!== null` 时由 dme 接管（`>10` 显示 `'10+'`，`0` 不显示）
 - **Chat Active 通知**：fatesky 在以下时机向 DME 发送 `DME_CHAT_ACTIVE`：`DME_READY` 握手完成后（初始状态）、用户进入/离开 `/messages` 路由时、`document.visibilityState` 变化时。有效状态 `active = isAtMessages && document.visibilityState === 'visible'`。DME 收到 `active: false` 后，应将当前打开会话的后续新消息计入未读，并通过 `DME_UNREAD` 重新上报；收到 `active: true` 后可按原有逻辑标记当前会话为已读。对接文档见 `docs/dme-chat-active-requirement.md`
+- **通过私信发送（web）**：web 端「Send via direct message」**不再是旧 bsky 私信选人流程**（`SendViaChatDialog` + `MessagesConversation`）——改为 `navigation.navigate('Messages')` 切到 `/messages`，并用 `requestDmeShare({uri, url, html})` 把帖子链接（`url`）+ AT URI（`uri`）+ HTML embed 片段（`html`，`buildEmbedSnippet` 生成）经 `sendToDme(DME_SHARE)` 交给 DME，由 DME 决定如何转发。`dmeShare.ts` 的模块级单槽缓冲保证 DME 未握手时不丢（缓存至 `DME_READY` 后由 bridge flush）；连点多个帖子只保留最新一条。**仅 web**：native 仍走 `SendViaChatDialog` + `RecentChats`（这两个文件保留）。对接文档见 `docs/dme-share-post-requirement.md`（注：整个 `docs/` 已被加入 `.gitignore`，需求文档仅本地保留、不进仓库）。改动文件：`constants.ts`、`dmeShare.ts`、`embed-snippet.ts`、`useDmeEmbedBridge.ts`、`ShareMenuItems.web.tsx`、`Embed.tsx`
 - **COEP/嵌入头现状（按实测记录，双方均无需改动）**：dme 侧保持 `Cross-Origin-Embedder-Policy: require-corp` + `Cross-Origin-Opener-Policy: same-origin`（嵌入不需要放宽 COEP，embed 与宿主仅经 `postMessage` 通信，不涉及跨源隔离资源加载）；dme 未设 `X-Frame-Options` 与 CSP `frame-ancestors`，故可被 iframe 嵌入。fatesky 侧**未设置任何 `Cross-Origin-*` 响应头**（`curl -sI https://app.hukoubook.com/` 仅见 `referrer-policy`），因此不存在"需要放宽 COEP"一说 —— 不要把降级面板归因于 COEP
 - **无法绕过的物理限制**：浏览器标签页切到后台会对 timer 降频，iframe 内的轮询/心跳会变慢 —— 不要写"后台也实时"的承诺
 - **消息链接跳转（DME_NAVIGATE / DME_OPEN_URL）**：dme 端点击聊天消息里的链接按平台分流——站内链接（host 精确为 `app.hukoubook.com`）发 `DME_NAVIGATE`（`payload.path` = `pathname+search+hash`，含 origin 之外的站内路径），iOS WKWebView 下的外链发 `DME_OPEN_URL`（`payload.url` = http/https 绝对地址）；PC / iOS 独立访问时 dme 自行 `window.open`，fatesky 无感知。fatesky 侧校验：`DME_NAVIGATE.path` 必须以 `/` 开头、非 `//`、无 `\`、解析后 host 必须等于 `app.hukoubook.com`（防协议相对跳转与外域）；`DME_OPEN_URL.url` 仅允许 `http:`/`https:`（防 `javascript:` 等伪协议）。两条消息在 iframe `display:none` 时也生效（listener 无条件常驻）。对接文档见 `../dme/fatesky-embed-link-requirements.md`

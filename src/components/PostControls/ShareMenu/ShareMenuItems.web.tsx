@@ -4,16 +4,18 @@ import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
 
+import {requestDmeShare} from '#/lib/dme-embed/dmeShare'
+import {buildEmbedSnippet} from '#/lib/embed-snippet'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
 import {shareText, shareUrl} from '#/lib/sharing'
+import {niceDate} from '#/lib/strings/time'
 import {toShareUrl} from '#/lib/strings/url-helpers'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useSession} from '#/state/session'
 import {useBreakpoints} from '#/alf'
 import {useDialogControl} from '#/components/Dialog'
 import {EmbedDialog} from '#/components/dialogs/Embed'
-import {SendViaChatDialog} from '#/components/dms/dialogs/ShareViaChatDialog'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {CodeBrackets_Stroke2_Corner0_Rounded as CodeBracketsIcon} from '#/components/icons/CodeBrackets'
@@ -34,10 +36,9 @@ let ShareMenuItems = ({
   const ax = useAnalytics()
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const embedPostControl = useDialogControl()
-  const sendViaChatControl = useDialogControl()
   const [devModeEnabled] = useDevMode()
   const aa = useAgeAssurance()
 
@@ -63,11 +64,26 @@ let ShareMenuItems = ({
     onShareProp()
   }
 
-  const onSelectChatToShareTo = (conversation: string) => {
-    ax.metric('share:press:dmSelected', {})
-    navigation.navigate('MessagesConversation', {
-      conversation,
-      embed: postUri,
+  // Web: "Send via direct message" no longer opens a chat picker. Instead we
+  // route to the /messages screen (where the DME encrypted chat iframe lives)
+  // and hand the post link (plus a rich HTML embed snippet) to the embed via
+  // postMessage; the embed decides how to forward it. The bridge buffers the
+  // intent until the embed is ready, so this is safe even before the iframe
+  // has handshaked.
+  const onSendViaDm = () => {
+    ax.metric('share:press:sendViaDm', {})
+    navigation.navigate('Messages')
+    requestDmeShare({
+      uri: postUri,
+      url: toShareUrl(href),
+      html: buildEmbedSnippet({
+        postAuthor,
+        postCid,
+        postUri,
+        record,
+        timestamp,
+        formattedTimestamp: niceDate(i18n, timestamp),
+      }),
     })
   }
 
@@ -102,10 +118,7 @@ let ShareMenuItems = ({
           <Menu.Item
             testID="postDropdownSendViaDMBtn"
             label={_(msg`Send via direct message`)}
-            onPress={() => {
-              ax.metric('share:press:openDmSearch', {})
-              sendViaChatControl.open()
-            }}>
+            onPress={onSendViaDm}>
             <Menu.ItemText>
               <Trans>Send via direct message</Trans>
             </Menu.ItemText>
@@ -171,11 +184,6 @@ let ShareMenuItems = ({
           timestamp={timestamp}
         />
       )}
-
-      <SendViaChatDialog
-        control={sendViaChatControl}
-        onSelectChat={onSelectChatToShareTo}
-      />
     </>
   )
 }
