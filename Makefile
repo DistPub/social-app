@@ -21,9 +21,8 @@ build-go:
 
 .PHONY: build-web-embed
 build-web-embed: ## Compile web embed bundle, copy to bskyweb/static
-	bun run intl:build
-	cd bskyembed && bun install && bun run build && bun run build-snippet
-	bun scripts/post-embed-build.js
+	cd bskyembed && bun install
+	bun run build-embed
 
 .PHONY: test
 test: ## Run all tests
