@@ -20,29 +20,29 @@ build-go:
 	npx wrangler r2 object put tmp/bskyweb --file=/tmp/bskyweb --remote
 
 .PHONY: build-web-embed
-build-web-embed: ## Compile web embed bundle, copy to bskyweb/embedr* directories
-	yarn intl:build
-	yarn build-embed
+build-web-embed: ## Compile web embed bundle, copy to bskyweb/static
+	bun run intl:build
+	cd bskyembed && bun install && bun run build && bun run build-snippet
+	bun scripts/post-embed-build.js
 
 .PHONY: test
 test: ## Run all tests
-	NODE_ENV=test yarn test
+	NODE_ENV=test bun test
 
 .PHONY: lint
 lint: ## Run style checks and verify syntax
-	yarn run lint
+	bun run lint
 
 #.PHONY: fmt
 #fmt: ## Run syntax re-formatting
-#	yarn prettier
+#	bun prettier
 
 .PHONY: deps
-deps: ## Installs dependent libs using 'yarn install'
-	yarn install --frozen-lockfile
-	cd bskyembed && yarn install --frozen-lockfile
+deps: ## Installs dependent libs using 'bun install'
+	bun install --frozen-lockfile
+	cd bskyembed && bun install --frozen-lockfile
 
 .PHONY: nvm-setup
-nvm-setup: ## Use NVM to install and activate node+yarn
+nvm-setup: ## Use NVM/node to install and activate node
 	nvm install 20
 	nvm use 20
-	npm install --global yarn

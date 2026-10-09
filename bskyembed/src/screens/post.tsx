@@ -81,7 +81,7 @@ function PwiOptOut({thread}: {thread: AppBskyFeedDefs.ThreadViewPost}) {
         <Link
           href={href}
           className="max-w-80 rounded-lg bg-brand text-white text-center py-1 px-4 w-full mx-auto">
-          View on Bluesky
+          View on Fatesky
         </Link>
       </div>
     </Container>
@@ -90,9 +90,9 @@ function PwiOptOut({thread}: {thread: AppBskyFeedDefs.ThreadViewPost}) {
 
 function ErrorMessage() {
   return (
-    <Container href="https://bsky.app/">
+    <Container href="https://app.hukoubook.com/">
       <Link
-        href="https://bsky.app/"
+        href="https://app.hukoubook.com/"
         className="transition-transform hover:scale-110 absolute top-4 right-4">
         <img src={logo} className="h-6" />
       </Link>

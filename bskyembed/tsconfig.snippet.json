@@ -3,6 +3,7 @@
     "target": "ES5",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "strict": true,
+    "types": [],
     "outDir": "dist"
   },
   "include": ["snippet"]

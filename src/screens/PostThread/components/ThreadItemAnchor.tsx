@@ -697,7 +697,7 @@ function BackdatedPostIndicator({post}: {post: AppBskyFeedDefs.PostView}) {
               <RNText style={[a.font_semi_bold]}>
                 {niceDate(i18n, createdAt)}
               </RNText>
-              , but was first seen by Bluesky on{' '}
+              , but was first seen by Fatesky on{' '}
               <RNText style={[a.font_semi_bold]}>
                 {niceDate(i18n, indexedAt)}
               </RNText>
@@ -706,7 +706,7 @@ function BackdatedPostIndicator({post}: {post: AppBskyFeedDefs.PostView}) {
           </Prompt.DescriptionText>
           <Prompt.DescriptionText>
             <Trans>
-              Bluesky cannot confirm the authenticity of the claimed date.
+              Fatesky cannot confirm the authenticity of the claimed date.
             </Trans>
           </Prompt.DescriptionText>
         </Prompt.Content>

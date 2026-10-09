@@ -112,7 +112,7 @@ export const SplashScreen = ({
                 onPress={onPressCreateAccount}
                 label={_(msg`Create new account`)}
                 accessibilityHint={_(
-                  msg`Opens flow to create a new Bluesky account`,
+                  msg`Opens flow to create a new Fatesky account`,
                 )}
                 size="large"
                 variant="solid"
@@ -126,7 +126,7 @@ export const SplashScreen = ({
                 onPress={onPressSignin}
                 label={_(msg`Sign in`)}
                 accessibilityHint={_(
-                  msg`Opens flow to sign in to your existing Bluesky account`,
+                  msg`Opens flow to sign in to your existing Fatesky account`,
                 )}
                 size="large"
                 variant="solid"

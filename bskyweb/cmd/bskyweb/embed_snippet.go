@@ -4,11 +4,30 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/http"
 
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
 	"github.com/bluesky-social/indigo/atproto/syntax"
+	"github.com/bluesky-social/social-app/bskyweb"
+
+	"github.com/labstack/echo/v4"
 )
 
+// OEmbedResponse is the oEmbed JSON payload returned by /oembed.
+type OEmbedResponse struct {
+	Type         string `json:"type"`
+	Version      string `json:"version"`
+	AuthorName   string `json:"author_name,omitempty"`
+	AuthorURL    string `json:"author_url,omitempty"`
+	ProviderName string `json:"provider_name,omitempty"`
+	ProviderURL  string `json:"provider_url,omitempty"`
+	CacheAge     int    `json:"cache_age,omitempty"`
+	Width        *int   `json:"width"`
+	Height       *int   `json:"height"`
+	HTML         string `json:"html,omitempty"`
+}
+
+// postEmbedHTML builds the <blockquote> snippet used by the oEmbed response.
 func (srv *Server) postEmbedHTML(postView *appbsky.FeedDefs_PostView) (string, error) {
 	// ensure that there isn't an injection from the URI
 	aturi, err := syntax.ParseATURI(postView.Uri)
@@ -64,9 +83,9 @@ func (srv *Server) postEmbedHTML(postView *appbsky.FeedDefs_PostView) (string, e
 		PostText:      post.Text,
 		PostAuthor:    authorName,
 		PostIndexedAt: sortAt,
-		ProfileURL:    template.URL(fmt.Sprintf("https://bsky.app/profile/%s?ref_src=embed", aturi.Authority())),
-		PostURL:       template.URL(fmt.Sprintf("https://bsky.app/profile/%s/post/%s?ref_src=embed", aturi.Authority(), aturi.RecordKey())),
-		WidgetURL:     template.URL("https://embed.bsky.app/static/embed.js"),
+		ProfileURL:    template.URL(fmt.Sprintf("https://app.hukoubook.com/profile/%s?ref_src=embed", aturi.Authority())),
+		PostURL:       template.URL(fmt.Sprintf("https://app.hukoubook.com/profile/%s/post/%s?ref_src=embed", aturi.Authority(), aturi.RecordKey())),
+		WidgetURL:     template.URL(EMBED_WIDGET_URL),
 	}
 
 	var buf bytes.Buffer
@@ -76,4 +95,21 @@ func (srv *Server) postEmbedHTML(postView *appbsky.FeedDefs_PostView) (string, e
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+// renderEmbedTemplate renders an embedr-templates/*.html file via html/template,
+// independent of the pongo2 renderer used for the main SPA.
+func (srv *Server) renderEmbedTemplate(c echo.Context, name string, data interface{}) error {
+	tmpl, err := template.ParseFS(bskyweb.EmbedrTemplateFS, "embedr-templates/*.html")
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "template error")
+	}
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
+		return c.String(http.StatusInternalServerError, "template error")
+	}
+	c.Response().Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.Response().WriteHeader(http.StatusOK)
+	_, err = c.Response().Writer.Write(buf.Bytes())
+	return err
 }

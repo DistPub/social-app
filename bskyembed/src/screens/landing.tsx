@@ -22,7 +22,7 @@ const DEFAULT_POST =
 const DEFAULT_URI =
   'at://did:plc:vjug55kidv6sye7ykr5faxxn/app.bsky.feed.post/3jzn6g7ixgq2y'
 
-export const EMBED_SERVICE = 'https://embed.bsky.app'
+export const EMBED_SERVICE = 'https://fatesky-ssr.hukoubook.com'
 export const EMBED_SCRIPT = `${EMBED_SERVICE}/static/embed.js`
 
 const root = document.getElementById('app')
@@ -85,7 +85,7 @@ function LandingPage() {
               atUri = `at://${did}/app.bsky.feed.post/${rkey}`
             } catch (err) {
               console.log(err)
-              throw new Error('Invalid Bluesky URL')
+              throw new Error('Invalid Fatesky URL')
             }
           }
         }
@@ -110,7 +110,7 @@ function LandingPage() {
         setThread(data.thread)
       } catch (err) {
         console.error(err)
-        setError(err instanceof Error ? err.message : 'Invalid Bluesky URL')
+        setError(err instanceof Error ? err.message : 'Invalid Fatesky URL')
       } finally {
         setLoading(false)
       }
@@ -125,7 +125,7 @@ function LandingPage() {
         <img src={logo} className="h-10" />
       </Link>
 
-      <h1 className="text-4xl font-bold text-center">Embed a Bluesky Post</h1>
+      <h1 className="text-4xl font-bold text-center">Embed a Fatesky Post</h1>
 
       <div className="flex flex-col w-full max-w-[600px] gap-6">
         <input
@@ -293,7 +293,7 @@ function Snippet({
 }
 
 function toShareUrl(path: string) {
-  return `https://bsky.app${path}?ref_src=embed`
+  return `https://app.hukoubook.com${path}?ref_src=embed`
 }
 
 /**

@@ -164,7 +164,7 @@ export function useAppIconSets() {
         name: _(
           msg({
             context: 'Name of app icon variant',
-            message: 'Bluesky Classic™',
+            message: 'Fatesky Classic™',
           }),
         ),
         iosImage: () => {

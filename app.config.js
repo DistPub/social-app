@@ -415,7 +415,7 @@ module.exports = function (_config) {
           'expo-contacts',
           {
             contactsPermission:
-              'I agree to allow Bluesky to use my contacts for friend discovery until I opt out.',
+              'I agree to allow Fatesky to use my contacts for friend discovery until I opt out.',
           },
         ],
       ],

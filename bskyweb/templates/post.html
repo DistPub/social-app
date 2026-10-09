@@ -54,7 +54,7 @@
   <meta name="twitter:value4" content="{{ postView.RepostCount }}">
   {% endif -%}
   <meta property="article:published_time" content="{{ postView.IndexedAt }}">
-  <link rel="alternate" type="application/json+oembed" href="https://embed.bsky.app/oembed?format=json&url={{ postView.Uri | urlencode }}" />
+  <link rel="alternate" type="application/json+oembed" href="https://fatesky-ssr.hukoubook.com/oembed?format=json&url={{ postView.Uri | urlencode }}" />
   <link rel="alternate" href="{{ postView.Uri }}" />
   <script type="application/ld+json">
     {
@@ -68,7 +68,7 @@
         {% else %}
         "name": "@{{ postView.Author.Handle }}",
         {% endif -%}
-        "url": "https://bsky.app/profile/{{ postView.Author.Handle }}"
+        "url": "https://app.hukoubook.com/profile/{{ postView.Author.Handle }}"
       },
       {%- if postText %}
       "text": "{{ postText }}",

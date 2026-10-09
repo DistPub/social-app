@@ -178,6 +178,19 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - 编译：`cd bskyweb && go build -o bskyweb ./cmd/bskyweb`
 - `bun run build-web` 先构建 SPA bundle，再由 bskyweb serve 静态文件
 
+#### 嵌入卡片（oEmbed + embed widget）已合并到 bskyweb
+
+原独立的 `embedr` Go 服务（上游 `embed.bsky.app`）已删除，其功能并入单一 `bskyweb` 服务。嵌入域名统一为 **`fatesky-ssr.hukoubook.com`**（与 Expo Web 主站 `app.hukoubook.com` 同源指向同一 bskyweb 二进制，靠 DNS/vhost 分流）。
+
+- 服务侧：`bskyweb/cmd/bskyweb/embed.go`（`WebOEmbed`/`WebPostEmbed`/`getPost`/`parsePostURL`）、`embed_snippet.go`（`postEmbedHTML` oembed snippet、`renderEmbedTemplate` 卡片页模板）
+- 路由：`/oembed`（带 CORS `*`）、`/embed/:did/app.bsky.feed.post/:rkey`、`/static/*`（embed 静态资源走主站既有 `/static/` 路由）
+- **`/embed/` 路径在 `Secure` 中间件被 `Skipper` 豁免 X-Frame-Options**（否则第三方 iframe 嵌入失败）
+- 前端（`bskyembed/`，Preact/Vite 独立小站）**源码与构建链保留，只复制产物**：`bun run build`（vite，产出 `dist/static/*` + `dist/post.html`）+ `bun run build-snippet`（`tsconfig.snippet.json`，产出 `dist/embed.js` widget）→ `bun scripts/post-embed-build.js` 把产物复制进 `bskyweb/static/`
+- 卡片页模板 `bskyweb/embedr-templates/postEmbed.html`（`EmbedrTemplateFS`）由 `renderEmbedTemplate` 经 `/embed/*` serve；其引用 `/static/xxx.[hash].js` 与挂载点对齐，**无需路径改写**
+- **禁止改动**：`bskyembed/snippet/embed.ts` 中的 widget 契约标识符（`window.bluesky`、`data-bluesky-uri`、`bluesky-embed` 类名、`BSKY_DEV_EMBED_URL`）；改域名只改 `EMBED_URL` 死值；oembed snippet 的 `bluesky-embed` class 与 widget 的 `data-bluesky-*` 选择器必须配对，勿重命名
+- 域名单一事实来源：`bskyembed/snippet/embed.ts`（`EMBED_URL`）、`bskyembed/src/screens/landing.tsx`（`EMBED_SERVICE`）、`src/lib/constants.ts`（`EMBED_SERVICE`）、`bskyweb/cmd/bskyweb/embed.go`（`EMBED_WIDGET_URL`）、`bskyweb/post.html` 的 oembed 自动发现 link —— 五处必须同步为 `fatesky-ssr.hukoubook.com`
+- 详细 oEmbed 规格见 `bskyweb/README.embed.md`
+
 ## 测试
 
 - Jest preset: `jest-expo/ios`，setup 文件 `jest/jestSetup.js`

@@ -218,7 +218,7 @@ function DeleteAccountDialogInner({
                 temporarily deactivate
               </Span>{' '}
               your account instead. Your profile, posts, feeds, and lists will
-              no longer be visible to other Bluesky users. You can reactivate
+              no longer be visible to other Fatesky users. You can reactivate
               your account at any time by logging in.
             </Trans>
           </Admonition>
@@ -334,7 +334,7 @@ function DeleteAccountDialogInner({
             </Prompt.TitleText>
             <Prompt.DescriptionText>
               <Trans>
-                This will irreversibly delete your Bluesky account{' '}
+                This will irreversibly delete your Fatesky account{' '}
                 <Span style={[a.font_semi_bold, t.atoms.text]}>
                   {currentHandle}
                 </Span>{' '}

@@ -23,6 +23,7 @@ import (
 	"time"
 
 	appbsky "github.com/bluesky-social/indigo/api/bsky"
+	"github.com/bluesky-social/indigo/atproto/identity"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/util/cliutil"
 	"github.com/bluesky-social/indigo/xrpc"
@@ -40,6 +41,7 @@ type Server struct {
 	echo  *echo.Echo
 	httpd *http.Server
 	xrpcc *xrpc.Client
+	dir   identity.Directory
 	cfg   *Config
 
 	ipccClient http.Client
@@ -108,6 +110,7 @@ func serve(cctx *cli.Context) error {
 	server := &Server{
 		echo:  e,
 		xrpcc: xrpcc,
+		dir:   identity.DefaultDirectory(),
 		cfg: &Config{
 			debug:         debug,
 			httpAddress:   httpAddress,
@@ -156,6 +159,12 @@ func serve(cctx *cli.Context) error {
 		ContentTypeNosniff: "nosniff",
 		XFrameOptions:      "SAMEORIGIN",
 		HSTSMaxAge:         31536000, // 365 days
+		// The /embed/:did/... page is loaded inside third-party iframes, so it
+		// must not send X-Frame-Options (the standalone embedr service disabled
+		// it for the same reason). Skip Secure for embed routes.
+		Skipper: func(c echo.Context) bool {
+			return strings.HasPrefix(c.Request().URL.Path, "/embed/")
+		},
 		// TODO:
 		// ContentSecurityPolicy
 		// XSSProtection
@@ -242,6 +251,22 @@ func serve(cctx *cli.Context) error {
 	}
 
 	e.GET("/iframe/*", echo.WrapHandler(staticHandler))
+
+	//
+	// embed (post oEmbed) routes — merged from the standalone embedr service.
+	// embedr's static assets (embed.js, iframe-resize.js, bundler output) are copied
+	// into bskyweb/static by scripts/post-embed-build.js, so they are served by the
+	// existing /static/* route below (the embedr service itself was removed).
+	//
+	// CORS for oembed endpoint (consumed by third-party sites)
+	embedCORS := middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodOptions},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
+	})
+
+	e.GET("/oembed", server.WebOEmbed, embedCORS)
+	e.GET("/embed/:did/app.bsky.feed.post/:rkey", server.WebPostEmbed)
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", staticHandler)), func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Response().Before(func() {
