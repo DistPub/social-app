@@ -2,6 +2,7 @@ import {
   Children,
   type JSX,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -40,15 +41,38 @@ export function Pager({
   const [selectedPage, setSelectedPage] = useState(initialPage)
   const scrollYs = useRef<Array<number | null>>([])
   const anchorRef = useRef(null)
+  const containerRef = useRef(null)
   const childCount = Children.count(children)
+
+  // Let the browser own vertical panning (smooth native scroll) while leaving
+  // horizontal gestures to our swipe detection. Without this, a deliberate
+  // horizontal swipe can be hijacked by browser-level gestures.
+  useEffect(() => {
+    const el = containerRef.current as HTMLElement | null
+    if (el) {
+      el.style.setProperty('touch-action', 'pan-y')
+    }
+  }, [])
 
   const swipe = useRef({
     touching: false,
     skip: false,
     startX: 0,
     startY: 0,
+    // 'h' = horizontal (feed switch), 'v' = vertical (scroll) — locked once the
+    // gesture exceeds the lock threshold so a vertical scroll can never flip into
+    // a horizontal swipe mid-gesture.
+    lockedAxis: null as 'h' | 'v' | null,
     fired: false,
   })
+
+  // Once the finger has moved past this many px, we commit to a direction.
+  const LOCK_THRESHOLD = 10
+  // Minimum horizontal travel to actually switch feeds.
+  const SWIPE_THRESHOLD = 48
+  // A gesture only counts as horizontal when it is at least this many times wider
+  // than it is tall. Anything more vertical than this is treated as a scroll.
+  const HORIZONTAL_RATIO = 1.5
 
   const isHorizontalScrollable = (target: any): boolean => {
     let el: Element | null = target
@@ -69,59 +93,6 @@ export function Pager({
     const touch = nativeEvent?.changedTouches?.[0] ?? nativeEvent?.touches?.[0]
     return touch ? {x: touch.pageX ?? 0, y: touch.pageY ?? 0} : null
   }
-
-  const onTouchStart = (e: GestureResponderEvent) => {
-    if (childCount < 2) return
-    const point = readTouch(e)
-    if (!point) return
-    const target = (e.nativeEvent as any)?.target as Element | undefined
-    swipe.current = {
-      touching: true,
-      skip: target ? isHorizontalScrollable(target) : false,
-      startX: point.x,
-      startY: point.y,
-      fired: false,
-    }
-  }
-
-  const onTouchMove = () => {}
-
-  const onTouchEnd = (e: GestureResponderEvent) => {
-    const state = swipe.current
-    if (!state.touching || state.skip || state.fired) {
-      swipe.current.touching = false
-      return
-    }
-    swipe.current.touching = false
-    const point = readTouch(e)
-    if (!point) return
-    const dx = point.x - state.startX
-    const dy = point.y - state.startY
-
-    if (Math.abs(dx) <= 48 || Math.abs(dx) <= 2 * Math.abs(dy)) return
-
-    if (dx > 0) {
-      if (selectedPage <= 0) return
-      swipe.current.fired = true
-      onTabBarSelect(selectedPage - 1)
-    } else {
-      if (selectedPage >= childCount - 1) return
-      swipe.current.fired = true
-      onTabBarSelect(selectedPage + 1)
-    }
-  }
-
-  const onTouchCancel = () => {
-    swipe.current.touching = false
-    swipe.current.skip = false
-    swipe.current.fired = false
-  }
-
-  useImperativeHandle(ref, () => ({
-    setPage: (index: number) => {
-      onTabBarSelect(index)
-    },
-  }))
 
   const onTabBarSelect = useCallback(
     (index: number) => {
@@ -156,8 +127,84 @@ export function Pager({
     [selectedPage, setSelectedPage, onPageSelected],
   )
 
+  const onTouchStart = (e: GestureResponderEvent) => {
+    if (childCount < 2) return
+    const point = readTouch(e)
+    if (!point) return
+    const target = (e.nativeEvent as any)?.target as Element | undefined
+    swipe.current = {
+      touching: true,
+      skip: target ? isHorizontalScrollable(target) : false,
+      startX: point.x,
+      startY: point.y,
+      lockedAxis: null,
+      fired: false,
+    }
+  }
+
+  const onTouchMove = (e: GestureResponderEvent) => {
+    const state = swipe.current
+    if (!state.touching || state.skip || state.lockedAxis) return
+    const point = readTouch(e)
+    if (!point) return
+    const dx = point.x - state.startX
+    const dy = point.y - state.startY
+    const absDx = Math.abs(dx)
+    const absDy = Math.abs(dy)
+    if (absDx < LOCK_THRESHOLD && absDy < LOCK_THRESHOLD) return
+
+    // Decide the dominant axis and lock it for the rest of the gesture. A gesture
+    // is only ever treated as horizontal when it is clearly wider than it is tall;
+    // everything else (including pure vertical scrolls) is locked to vertical and
+    // the feed switch is permanently disabled for this touch.
+    if (absDx > absDy * HORIZONTAL_RATIO) {
+      state.lockedAxis = 'h'
+    } else {
+      state.lockedAxis = 'v'
+      state.skip = true
+    }
+  }
+
+  const onTouchEnd = (e: GestureResponderEvent) => {
+    const state = swipe.current
+    if (!state.touching || state.skip || state.fired) {
+      swipe.current.touching = false
+      return
+    }
+    swipe.current.touching = false
+    if (state.lockedAxis !== 'h') return
+
+    const point = readTouch(e)
+    if (!point) return
+    const dx = point.x - state.startX
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return
+
+    if (dx > 0) {
+      if (selectedPage <= 0) return
+      swipe.current.fired = true
+      onTabBarSelect(selectedPage - 1)
+    } else {
+      if (selectedPage >= childCount - 1) return
+      swipe.current.fired = true
+      onTabBarSelect(selectedPage + 1)
+    }
+  }
+
+  const onTouchCancel = () => {
+    swipe.current.touching = false
+    swipe.current.skip = false
+    swipe.current.fired = false
+  }
+
+  useImperativeHandle(ref, () => ({
+    setPage: (index: number) => {
+      onTabBarSelect(index)
+    },
+  }))
+
   return (
     <View
+      ref={containerRef}
       style={s.hContentRegion}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
