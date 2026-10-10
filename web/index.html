@@ -211,5 +211,12 @@
     <!-- The root element for your Expo app. -->
     <div id="root">
     </div>
+
+    <!--
+      Register the Workbox service worker (offline app shell + runtime
+      caching). register-sw.js lives in public/ and lands at the site root
+      after build; it skips registration on localhost.
+    -->
+    <script defer src="/register-sw.js"></script>
   </body>
 </html>

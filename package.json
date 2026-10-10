@@ -29,7 +29,7 @@
     "web": "expo start --web",
     "use-build-number": "./scripts/useBuildNumberEnv.sh",
     "use-build-number-with-bump": "./scripts/useBuildNumberEnvWithBump.sh",
-    "build-web": "expo export:web && node ./scripts/post-web-build.js",
+    "build-web": "expo export:web && node ./scripts/post-web-build.js && node ./scripts/generate-sw.mjs",
     "build-all": "yarn intl:build && yarn use-build-number-with-bump eas build --platform all",
     "build-ios": "yarn use-build-number-with-bump eas build -p ios",
     "build-android": "yarn use-build-number-with-bump eas build -p android",
@@ -283,7 +283,8 @@
     "ts-plugin-sort-import-suggestions": "^1.0.4",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.0",
-    "webpack-bundle-analyzer": "^4.10.1"
+    "webpack-bundle-analyzer": "^4.10.1",
+    "workbox-build": "^7.4.1"
   },
   "overrides": {
     "@react-native/babel-preset": "0.81.5",

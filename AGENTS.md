@@ -18,7 +18,7 @@ Bluesky 社交应用 Web 版，基于 React Native 0.81 + Expo 54 + React Native
 ```bash
 bun install               # 安装依赖（postinstall 自动执行 patch-package 和 intl:compile-if-needed）
 bun run web               # 启动 web 开发服务器（Expo + webpack）
-bun run build-web         # 生产构建（输出到 web-build/，再复制到 bskyweb/static/）
+bun run build-web         # 生产构建（输出到 web-build/，再复制到 bskyweb/static/，末尾生成 SW）
 bun run generate-webpack-stats-file  # 生成 webpack stats 供分析
 bun run open-analyzer     # 打开 bundle analyzer
 
@@ -270,10 +270,41 @@ iOS 刘海屏（含状态栏 / 灵动岛）上，所有 tab 屏幕的顶部必�
 
 ### 构建产物
 
-- `bun run build-web` → `expo export:web` + `scripts/post-web-build.js`
+- `bun run build-web` → `expo export:web` + `scripts/post-web-build.js` + `scripts/generate-sw.mjs`（生成 SW）
 - 输出：`web-build/` 目录（切片 chunk + sourcemap），随后由 `scripts/post-web-build.js` 复制到 `bskyweb/static/`
 - **注意**：产物目录是 `web-build/`，不是 `dist/`（`dist/` 在本仓库不存在且被 gitignore）
 - bskyweb Go 服务 serve `bskyweb/static/` 作为生产静态服务
+
+### PWA / Service Worker（Workbox）
+
+Web PWA 之前只有可安装外壳（manifest + 图标），**没有 Service Worker**（expo 在 dev 仅挂 noop SW），断网即白屏。现在用 **Workbox** 补齐离线 + 智能缓存。
+
+**构建链路（改动 `package.json` 的 `build-web`）**
+
+```
+expo export:web && node ./scripts/post-web-build.js && node ./scripts/generate-sw.mjs
+```
+
+- `scripts/generate-sw.mjs`：`workbox-build@7.4.1` 的 `generateSW`，对 `web-build/` 做 precache + 运行时缓存，产出 `web-build/sw.js`（+ `web-build/workbox-<hash>.js` 运行时，被 SW `import`、非预缓存）
+
+**缓存策略（`scripts/generate-sw.mjs` 单一事实来源，改策略只动此文件）**
+
+- `skipWaiting` + `clientsClaim` + `cleanupOutdatedCaches`：新版本部署后自动接管
+- **预缓存 app shell**：`index.html` + 全部带 hash 的 `static/**` JS/CSS + `static/media`（字体/图片/SVG），共约 157 条；`globIgnores` 已排除 `workbox-*.js`、`register-sw.js`、`*.map`、各尺寸根 PNG 图标
+- **`navigateFallback` → `/index.html`**：SPA 离线回退（深链接也回退到 app shell）
+- **运行时缓存**：
+  - `/xrpc`（atproto API）`NetworkOnly` — 永不缓存，始终走网络
+  - `/static/*`（内容哈希、immutable）`StaleWhileRevalidate`
+  - 同源媒体（`.png/jpg/svg/webp/woff2/...`）`CacheFirst`
+  - CDN 媒体（`bsky.app` / `hukoubook.com` / `stitch.com` / `cdn.`）`CacheFirst`
+
+**注册与部署**
+
+- `public/register-sw.js`：在 `load` 后注册 `/sw.js`，**localhost / 127.0.0.1 自动跳过**（不动 dev server）
+- `web/index.html` body 末尾：`<script defer src="/register-sw.js"></script>`（`public/` 由 post-web-build 拷到 `web-build` 根）
+- `public/_headers`（Cloudflare Pages 部署认此文件）：`/sw.js` 与 `/workbox-*.js` 设 `Cache-Control: no-cache`，否则浏览器缓存旧 SW 导致更新不生效
+- **不要**在 webpack 里加 SW 插件（保持构建可预测、单 `sw.js` 输出）；要调缓存策略只改 `scripts/generate-sw.mjs`
+
 
 ## 代码规范速查
 

@@ -1,0 +1,7 @@
+# Keep the service worker and its runtime uncached so the browser always
+# fetches the latest SW on navigation (otherwise stale-SW bugs block updates).
+/sw.js
+  Cache-Control: no-cache
+
+/workbox-*.js
+  Cache-Control: no-cache
