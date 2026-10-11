@@ -5,7 +5,7 @@ import {
   Pressable,
   type View,
 } from 'react-native'
-import {Image} from 'expo-image'
+import {Image, type ImageLoadEventData} from 'expo-image'
 import {type AppBskyEmbedExternal} from '@atproto/api'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
@@ -23,6 +23,10 @@ import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
  * Renders a GIF stored as an external embed. The static `link.thumb` is shown
  * first; the HD animation (`params.playerUri`, loaded straight from the GIF
  * host) replaces it once loaded.
+ *
+ * The frame sizes itself to the GIF's intrinsic aspect ratio (learned from the
+ * loaded image's dimensions) so there are no letterbox bars — it reads like an
+ * image, not a fixed-height player.
  *
  * Playback follows the autoplay preference, like videos do:
  * - autoplay enabled (default): the animation loads and plays as soon as the
@@ -55,6 +59,12 @@ export function ExternalGif({
   const [isAnimating, setIsAnimating] = React.useState(true)
   // Whether the embed is within (or near) the viewport
   const [isVisible, setIsVisible] = React.useState(false)
+  // Intrinsic aspect ratio of the GIF, learned once an image frame loads.
+  const [aspectRatio, setAspectRatio] = React.useState<number | undefined>(
+    params.dimensions && params.dimensions.height > 0
+      ? params.dimensions.width / params.dimensions.height
+      : undefined,
+  )
 
   // Used for controlling animation
   const imageRef = React.useRef<Image>(null)
@@ -67,6 +77,13 @@ export function ExternalGif({
       setIsPrefetched(true)
     })
   }, [params.playerUri])
+
+  const onImageLoad = React.useCallback((event: ImageLoadEventData) => {
+    const {width, height} = event.source
+    if (width > 0 && height > 0) {
+      setAspectRatio(width / height)
+    }
+  }, [])
 
   // Track viewport visibility so autoplay only kicks in for on-screen GIFs.
   React.useEffect(() => {
@@ -128,6 +145,11 @@ export function ExternalGif({
     [consentDialogControl, hasConsent, isPlayerActive, load],
   )
 
+  // Show a play button only when the user has to tap to start (autoplay off or
+  // no consent yet), or when the animation is paused.
+  const showPlayButton =
+    !isAnimating || (!isPlayerActive && (autoplayDisabled || !hasConsent))
+
   return (
     <>
       <EmbedConsentDialog
@@ -139,13 +161,11 @@ export function ExternalGif({
       <Pressable
         ref={containerRef}
         style={[
-          {height: 300},
           a.w_full,
           a.overflow_hidden,
-          {
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-          },
+          // Size to the GIF's own aspect ratio; fall back to 16:9 until the
+          // first frame reports its dimensions so there's no layout jump.
+          {aspectRatio: aspectRatio ?? 16 / 9},
         ]}
         onPress={onPlayPress}
         accessibilityRole="button"
@@ -161,7 +181,8 @@ export function ExternalGif({
           style={{flex: 1}}
           ref={imageRef}
           autoplay={isAnimating}
-          contentFit="contain"
+          contentFit="cover"
+          onLoad={onImageLoad}
           accessibilityIgnoresInvertColors
           accessibilityLabel={link.title}
           accessibilityHint={link.title}
@@ -179,15 +200,7 @@ export function ExternalGif({
               ]}
             />
 
-            {/*
-              Show a play button only when the user has to tap to start: i.e.
-              autoplay is disabled, or the animation is paused. While a
-              consented autoplaying GIF is still loading we show a spinner
-              instead (handled below).
-            */}
-            {!isPlayerActive && (autoplayDisabled || !hasConsent) ? (
-              <PlayButtonIcon />
-            ) : !isAnimating ? (
+            {showPlayButton ? (
               <PlayButtonIcon />
             ) : (
               <ActivityIndicator size="large" color="white" />

@@ -50,9 +50,10 @@ export type DmeEmbedProps = {
  * degraded. The frame is deliberately left un-isolated from its own storage:
  * any attribute of the kind that would block the dme's
  * localStorage/IndexedDB session persistence is omitted. The `allow` list
- * covers exactly three permissions the embed needs: `clipboard-write` for the
- * message copy button, `fullscreen` for the in-iframe video viewer, and
- * `autoplay` for message sounds and the muted video-preview autoplay.
+ * covers exactly four permissions the embed needs: `clipboard-write` for the
+ * message copy button, `fullscreen` for the in-iframe video viewer,
+ * `autoplay` for message sounds and the muted video-preview autoplay, and
+ * `microphone` for recording voice messages.
  */
 export function DmeEmbed({
   getToken,
@@ -98,7 +99,7 @@ export function DmeEmbed({
           src={`${DME_EMBED_ORIGIN}/?goto=ChatList`}
           onLoad={bridge.onIframeLoad}
           title={_(msg({message: 'DME Chat'}))}
-          allow="clipboard-write; fullscreen; autoplay"
+          allow="clipboard-write; fullscreen; autoplay; microphone"
           style={{flex: 1, width: '100%', border: 'none'}}
         />
       )}
