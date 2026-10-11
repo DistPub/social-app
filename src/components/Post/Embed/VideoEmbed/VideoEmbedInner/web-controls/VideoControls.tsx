@@ -140,7 +140,10 @@ export function Controls({
         pause()
       }
     }
-  }, [onScreen, pause, active, play, autoplayDisabled, isGif])
+    // useNativeHls: when the native HLS fallback sets video.src (after hls.js
+    // dynamic import resolves), the <video> gains a src late. Re-evaluate
+    // autoplay at that point so single-post pages auto-play like feeds do.
+  }, [onScreen, pause, active, play, autoplayDisabled, isGif, useNativeHls])
 
   // use minimal quality when not focused
   useEffect(() => {
@@ -353,7 +356,7 @@ export function Controls({
           accessibilityRole="button"
           accessibilityLabel={_(msg`Play video`)}
           accessibilityHint=""
-          onPress={onPressPlayPause}
+          onPress={play}
           style={[
             a.absolute,
             a.rounded_full,
