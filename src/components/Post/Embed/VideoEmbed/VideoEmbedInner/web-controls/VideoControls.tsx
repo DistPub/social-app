@@ -312,6 +312,7 @@ export function Controls({
 
   return (
     <div
+      data-no-swipe
       style={{
         position: 'absolute',
         inset: 0,

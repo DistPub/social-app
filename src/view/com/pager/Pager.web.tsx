@@ -77,6 +77,9 @@ export function Pager({
   const isHorizontalScrollable = (target: any): boolean => {
     let el: Element | null = target
     while (el && el !== document.body) {
+      // Video controls and other interactive elements that handle their own
+      // horizontal gestures (scrubber, etc.) opt out of feed swipe.
+      if (el.hasAttribute?.('data-no-swipe')) return true
       if (el.scrollWidth > el.clientWidth) {
         const overflowX = getComputedStyle(el).overflowX
         if (overflowX === 'auto' || overflowX === 'scroll') {
