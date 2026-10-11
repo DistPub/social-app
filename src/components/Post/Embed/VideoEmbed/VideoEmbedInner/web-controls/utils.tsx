@@ -177,22 +177,29 @@ export function useVideoElement(ref: RefObject<HTMLVideoElement | null>) {
       ref.current.currentTime = 0
     }
 
+    // Always call play() directly. When readyState is low (e.g. preload="none"
+    // or native HLS just loaded), calling play() forces the browser to start
+    // fetching data. The play() promise resolves once enough data is buffered.
+    // We still set playWhenReadyRef so that handleCanPlay can retry if the
+    // initial promise is rejected (e.g. by autoplay policy).
     if (ref.current.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
       playWhenReadyRef.current = true
-    } else {
-      const promise = ref.current.play()
-      if (promise !== undefined) {
-        promise.catch((err: any) => {
-          if (
-            // ignore this common error. it's fine
-            !err.message?.includes(
-              `The play() request was interrupted by a call to pause()`,
-            )
-          ) {
-            logger.error('Error playing video:', {message: err})
-          }
-        })
-      }
+    }
+
+    const promise = ref.current.play()
+    if (promise !== undefined) {
+      promise.catch((err: any) => {
+        if (
+          !err.message?.includes(
+            `The request is not allowed by the user agent`,
+          ) &&
+          !err.message?.includes(
+            `The play() request was interrupted by a call to pause()`,
+          )
+        ) {
+          logger.error('Error playing video:', {message: err})
+        }
+      })
     }
   }, [ref])
 

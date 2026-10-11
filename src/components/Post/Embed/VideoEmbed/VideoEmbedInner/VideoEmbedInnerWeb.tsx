@@ -37,7 +37,7 @@ export function VideoEmbedInnerWeb({
     throw error
   }
 
-  const {hlsRef, loop} = useHLS({
+  const {hlsRef, loop, useNativeHls} = useHLS({
     playlist: embed.playlist,
     setHasSubtitleTrack,
     setError,
@@ -80,7 +80,7 @@ export function VideoEmbedInnerWeb({
             poster={shown ? embed.thumbnail : undefined}
             style={{width: '100%', height: '100%', objectFit: 'contain'}}
             playsInline
-            preload="none"
+            preload={useNativeHls ? 'auto' : 'none'}
             muted={embed.presentation === 'gif' || !focused}
             aria-labelledby={embed.alt ? figId : undefined}
             onTimeUpdate={e => {
@@ -107,6 +107,7 @@ export function VideoEmbedInnerWeb({
           hasSubtitleTrack={hasSubtitleTrack}
           isGif={embed.presentation === 'gif'}
           altText={embed.alt}
+          useNativeHls={useNativeHls}
         />
       </div>
     </View>
@@ -165,6 +166,7 @@ function useHLS({
   const [lowQualityFragments, setLowQualityFragments] = useState<
     HlsTypes.Fragment[]
   >([])
+  const [useNativeHls, setUseNativeHls] = useState(false)
 
   // purge low quality segments from buffer on next frag change
   const handleFragChange = useNonReactiveCallback(
@@ -221,9 +223,11 @@ function useHLS({
         video.canPlayType('application/vnd.apple.mpegurl') ||
         video.canPlayType('application/x-mpegURL')
       ) {
+        setUseNativeHls(true)
         video.src = playlist
         // hlsRef stays undefined — Controls already guards on hlsRef.current
         return () => {
+          setUseNativeHls(false)
           video.removeAttribute('src')
           video.load()
         }
@@ -348,5 +352,6 @@ function useHLS({
   return {
     hlsRef,
     loop: !hasLowQualityFragmentAtStart,
+    useNativeHls,
   }
 }

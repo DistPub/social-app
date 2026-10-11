@@ -10,6 +10,7 @@ import {
   useSetSubtitlesEnabled,
   useSubtitlesEnabled,
 } from '#/state/preferences'
+import {PressableWithHover} from '#/view/com/util/PressableWithHover'
 import {atoms as a, useTheme, web} from '#/alf'
 import {useIsWithinMessage} from '#/components/dms/MessageContext'
 import {useFullscreen} from '#/components/hooks/useFullscreen'
@@ -47,6 +48,7 @@ export function Controls({
   hasSubtitleTrack,
   isGif,
   altText,
+  useNativeHls,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>
   hlsRef: React.RefObject<Hls | undefined | null>
@@ -60,6 +62,7 @@ export function Controls({
   hasSubtitleTrack: boolean
   isGif: boolean
   altText?: string
+  useNativeHls: boolean
 }) {
   const {
     play,
@@ -343,6 +346,34 @@ export function Controls({
         ]}
         onPress={onPressEmptySpace}
       />
+      {/* 封面态居中大播放按钮：仅在原生 HLS 降级路径（iOS ≤16 等无 MSE）显示，
+          未播放且未聚焦时让用户一眼区分视频/图片，点击即播；其他浏览器沿用原有控制条 */}
+      {!playing && !focused && !autoplayDisabled && useNativeHls && (
+        <PressableWithHover
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`Play video`)}
+          accessibilityHint=""
+          onPress={onPressPlayPause}
+          style={[
+            a.absolute,
+            a.rounded_full,
+            {
+              top: '50%',
+              left: '50%',
+              transform: [{translateX: '-50%'}, {translateY: '-50%'}],
+              width: 68,
+              height: 68,
+              backgroundColor: 'rgba(0, 0, 0, 0.55)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingLeft: 4,
+            },
+            web({transition: 'background-color 0.15s'}),
+          ]}
+          hoverStyle={{backgroundColor: 'rgba(0, 0, 0, 0.75)'}}>
+          <PlayIcon fill={t.palette.white} width={32} aria-hidden />
+        </PressableWithHover>
+      )}
       {!showControls && !focused && duration > 0 && (
         <TimeIndicator time={Math.floor(duration - currentTime)} />
       )}
