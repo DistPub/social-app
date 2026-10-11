@@ -112,70 +112,76 @@ export const ExternalEmbed = ({
             <ExternalPlayer link={link} params={embedPlayerParams} />
           ) : undefined}
 
-          <View
-            style={[
-              a.flex_1,
-              a.pt_sm,
-              {gap: 3},
-              hasMedia && a.border_t,
-              hovered
-                ? t.atoms.border_contrast_high
-                : t.atoms.border_contrast_low,
-            ]}>
-            <View style={[{gap: 3}, a.pb_xs, a.px_md]}>
-              {!embedPlayerParams?.isGif && !embedPlayerParams?.dimensions && (
-                <Text
-                  emoji
-                  numberOfLines={3}
-                  style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
-                  {link.title || link.uri}
-                </Text>
-              )}
-              {link.description ? (
-                <Text
-                  emoji
-                  numberOfLines={link.thumb ? 2 : 4}
-                  style={[a.text_sm, a.leading_snug]}>
-                  {link.description}
-                </Text>
-              ) : undefined}
-            </View>
-            <View style={[a.px_md]}>
-              <Divider />
-              <View
-                style={[
-                  a.flex_row,
-                  a.align_center,
-                  a.gap_2xs,
-                  a.pb_sm,
-                  {
-                    paddingTop: 6, // off menu
-                  },
-                ]}>
-                <Globe
-                  size="xs"
+          {/*
+            A GIF renders as just the animation — no title/description/domain
+            bar below it, otherwise it reads as a regular link card.
+          */}
+          {!embedPlayerParams?.isGif && (
+            <View
+              style={[
+                a.flex_1,
+                a.pt_sm,
+                {gap: 3},
+                hasMedia && a.border_t,
+                hovered
+                  ? t.atoms.border_contrast_high
+                  : t.atoms.border_contrast_low,
+              ]}>
+              <View style={[{gap: 3}, a.pb_xs, a.px_md]}>
+                {!embedPlayerParams?.dimensions && (
+                  <Text
+                    emoji
+                    numberOfLines={3}
+                    style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
+                    {link.title || link.uri}
+                  </Text>
+                )}
+                {link.description ? (
+                  <Text
+                    emoji
+                    numberOfLines={link.thumb ? 2 : 4}
+                    style={[a.text_sm, a.leading_snug]}>
+                    {link.description}
+                  </Text>
+                ) : undefined}
+              </View>
+              <View style={[a.px_md]}>
+                <Divider />
+                <View
                   style={[
-                    a.transition_color,
-                    hovered
-                      ? t.atoms.text_contrast_medium
-                      : t.atoms.text_contrast_low,
-                  ]}
-                />
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    a.transition_color,
-                    a.text_xs,
-                    a.leading_snug,
-                    hovered
-                      ? t.atoms.text_contrast_high
-                      : t.atoms.text_contrast_medium,
+                    a.flex_row,
+                    a.align_center,
+                    a.gap_2xs,
+                    a.pb_sm,
+                    {
+                      paddingTop: 6, // off menu
+                    },
                   ]}>
-                  {toNiceDomain(link.uri)}
-                </Text>
+                  <Globe
+                    size="xs"
+                    style={[
+                      a.transition_color,
+                      hovered
+                        ? t.atoms.text_contrast_medium
+                        : t.atoms.text_contrast_low,
+                    ]}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      a.transition_color,
+                      a.text_xs,
+                      a.leading_snug,
+                      hovered
+                        ? t.atoms.text_contrast_high
+                        : t.atoms.text_contrast_medium,
+                    ]}>
+                    {toNiceDomain(link.uri)}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
+          )}
         </View>
       )}
     </Link>

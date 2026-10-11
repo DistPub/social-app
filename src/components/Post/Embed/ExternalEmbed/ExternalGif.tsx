@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   type GestureResponderEvent,
   Pressable,
+  type View,
 } from 'react-native'
 import {Image} from 'expo-image'
 import {type AppBskyEmbedExternal} from '@atproto/api'
@@ -10,7 +11,7 @@ import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
 import {type EmbedPlayerParams} from '#/lib/strings/embed-player'
-import {useExternalEmbedsPrefs} from '#/state/preferences'
+import {useAutoplayDisabled, useExternalEmbedsPrefs} from '#/state/preferences'
 import {atoms as a, useTheme} from '#/alf'
 import {useDialogControl} from '#/components/Dialog'
 import {EmbedConsentDialog} from '#/components/dialogs/EmbedConsent'
@@ -18,6 +19,18 @@ import {Fill} from '#/components/Fill'
 import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
 
+/**
+ * Renders a GIF stored as an external embed. The static `link.thumb` is shown
+ * first; the HD animation (`params.playerUri`, loaded straight from the GIF
+ * host) replaces it once loaded.
+ *
+ * Playback follows the autoplay preference, like videos do:
+ * - autoplay enabled (default): the animation loads and plays as soon as the
+ *   embed scrolls into view — no play button.
+ * - autoplay disabled: only the static thumb is shown until the user taps.
+ *
+ * A tap also toggles play/pause once the animation is running.
+ */
 export function ExternalGif({
   link,
   params,
@@ -27,18 +40,25 @@ export function ExternalGif({
 }) {
   const t = useTheme()
   const externalEmbedsPrefs = useExternalEmbedsPrefs()
+  const autoplayDisabled = useAutoplayDisabled()
   const {_} = useLingui()
   const consentDialogControl = useDialogControl()
 
-  // Tracking if the placer has been activated
+  // Whether the user has consented to loading embeds from this source.
+  const hasConsent = externalEmbedsPrefs?.[params.source] !== undefined
+
+  // Tracking if the player has been activated (started loading the HD gif)
   const [isPlayerActive, setIsPlayerActive] = React.useState(false)
   // Tracking whether the gif has been loaded yet
   const [isPrefetched, setIsPrefetched] = React.useState(false)
   // Tracking whether the image is animating
   const [isAnimating, setIsAnimating] = React.useState(true)
+  // Whether the embed is within (or near) the viewport
+  const [isVisible, setIsVisible] = React.useState(false)
 
   // Used for controlling animation
   const imageRef = React.useRef<Image>(null)
+  const containerRef = React.useRef<View>(null)
 
   const load = React.useCallback(() => {
     setIsPlayerActive(true)
@@ -48,13 +68,40 @@ export function ExternalGif({
     })
   }, [params.playerUri])
 
+  // Track viewport visibility so autoplay only kicks in for on-screen GIFs.
+  React.useEffect(() => {
+    const node = containerRef.current
+    if (!(node instanceof HTMLElement)) {
+      // Native: no IntersectionObserver, treat as always visible.
+      setIsVisible(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      {threshold: 0.1},
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  // Autoplay: once the GIF is on screen and consent has been granted, load and
+  // play without requiring a tap. We skip this when autoplay is disabled, when
+  // the user hasn't consented yet, and when the player is already active.
+  React.useEffect(() => {
+    if (autoplayDisabled) return
+    if (!isVisible) return
+    if (!hasConsent) return
+    if (isPlayerActive) return
+    load()
+  }, [autoplayDisabled, isVisible, hasConsent, isPlayerActive, load])
+
   const onPlayPress = React.useCallback(
     (event: GestureResponderEvent) => {
       // Don't propagate on web
       event.preventDefault()
 
       // Show consent if this is the first load
-      if (externalEmbedsPrefs?.[params.source] === undefined) {
+      if (!hasConsent) {
         consentDialogControl.open()
         return
       }
@@ -78,13 +125,7 @@ export function ExternalGif({
         }
       })
     },
-    [
-      consentDialogControl,
-      externalEmbedsPrefs,
-      isPlayerActive,
-      load,
-      params.source,
-    ],
+    [consentDialogControl, hasConsent, isPlayerActive, load],
   )
 
   return (
@@ -96,6 +137,7 @@ export function ExternalGif({
       />
 
       <Pressable
+        ref={containerRef}
         style={[
           {height: 300},
           a.w_full,
@@ -137,10 +179,17 @@ export function ExternalGif({
               ]}
             />
 
-            {!isAnimating || !isPlayerActive ? ( // Play button when not animating or not active
+            {/*
+              Show a play button only when the user has to tap to start: i.e.
+              autoplay is disabled, or the animation is paused. While a
+              consented autoplaying GIF is still loading we show a spinner
+              instead (handled below).
+            */}
+            {!isPlayerActive && (autoplayDisabled || !hasConsent) ? (
+              <PlayButtonIcon />
+            ) : !isAnimating ? (
               <PlayButtonIcon />
             ) : (
-              // Activity indicator while gif loads
               <ActivityIndicator size="large" color="white" />
             )}
           </Fill>
