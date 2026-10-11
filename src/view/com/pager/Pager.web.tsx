@@ -70,9 +70,9 @@ export function Pager({
   const LOCK_THRESHOLD = 10
   // Minimum horizontal travel to actually switch feeds.
   const SWIPE_THRESHOLD = 48
-  // A gesture only counts as horizontal when it is at least this many times wider
-  // than it is tall. Anything more vertical than this is treated as a scroll.
-  const HORIZONTAL_RATIO = 1.5
+  // Maximum deviation from horizontal (in degrees) for a gesture to count as
+  // a feed-switch swipe. tan(5°) ≈ 0.0875 — anything steeper is a scroll.
+  const MAX_ANGLE_DEG = 5
 
   const isHorizontalScrollable = (target: any): boolean => {
     let el: Element | null = target
@@ -156,12 +156,17 @@ export function Pager({
     const absDy = Math.abs(dy)
     if (absDx < LOCK_THRESHOLD && absDy < LOCK_THRESHOLD) return
 
-    // Decide the dominant axis and lock it for the rest of the gesture. A gesture
-    // is only ever treated as horizontal when it is clearly wider than it is tall;
-    // everything else (including pure vertical scrolls) is locked to vertical and
-    // the feed switch is permanently disabled for this touch.
-    if (absDx > absDy * HORIZONTAL_RATIO) {
-      state.lockedAxis = 'h'
+    // Decide the dominant axis and lock it for the rest of the gesture. Only
+    // a near-perfect horizontal swipe (≤5° deviation) counts as a feed switch;
+    // everything else is locked to vertical and feed switch is disabled.
+    if (absDx > 0) {
+      const angle = Math.atan2(absDy, absDx) * (180 / Math.PI)
+      if (angle <= MAX_ANGLE_DEG) {
+        state.lockedAxis = 'h'
+      } else {
+        state.lockedAxis = 'v'
+        state.skip = true
+      }
     } else {
       state.lockedAxis = 'v'
       state.skip = true
