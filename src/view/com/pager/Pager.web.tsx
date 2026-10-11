@@ -71,8 +71,8 @@ export function Pager({
   // Minimum horizontal travel to actually switch feeds.
   const SWIPE_THRESHOLD = 48
   // Maximum deviation from horizontal (in degrees) for a gesture to count as
-  // a feed-switch swipe. tan(5°) ≈ 0.0875 — anything steeper is a scroll.
-  const MAX_ANGLE_DEG = 5
+  // a feed-switch swipe. ±15° — anything steeper is a scroll.
+  const MAX_ANGLE_DEG = 15
 
   const isHorizontalScrollable = (target: any): boolean => {
     let el: Element | null = target
