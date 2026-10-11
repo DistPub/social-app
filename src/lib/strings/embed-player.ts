@@ -22,6 +22,7 @@ export const embedPlayerSources = [
   'appleMusic',
   'vimeo',
   'giphy',
+  'klipy',
   'flickr',
   'bandcamp',
 ] as const
@@ -42,6 +43,7 @@ export type EmbedPlayerType =
   | 'apple_music_song'
   | 'vimeo_video'
   | 'giphy_gif'
+  | 'klipy_gif'
   | 'flickr_album'
   | 'bandcamp_album'
   | 'bandcamp_track'
@@ -52,6 +54,7 @@ export const externalEmbedLabels: Record<EmbedPlayerSource, string> = {
   vimeo: 'Vimeo',
   twitch: 'Twitch',
   giphy: 'GIPHY',
+  klipy: 'Klipy',
   spotify: 'Spotify',
   appleMusic: 'Apple Music',
   soundcloud: 'SoundCloud',
@@ -308,7 +311,9 @@ export function parseEmbedPlayerFromUrl(
           isGif: true,
           hideDetails: true,
           metaUri: `https://giphy.com/gifs/${gifId}`,
-          playerUri: `https://i.giphy.com/media/${gifId}/200.webp`,
+          // Canonical HD animated WebP direct link (no size suffix is honored by
+          // giphy, so we always resolve the full-quality rendition here).
+          playerUri: `https://i.giphy.com/${gifId}.webp`,
         }
       }
     }
@@ -329,7 +334,7 @@ export function parseEmbedPlayerFromUrl(
           isGif: true,
           hideDetails: true,
           metaUri: `https://giphy.com/gifs/${trackingOrId}`,
-          playerUri: `https://i.giphy.com/media/${trackingOrId}/200.webp`,
+          playerUri: `https://i.giphy.com/${trackingOrId}.webp`,
         }
       } else if (filename && gifFilenameRegex.test(filename)) {
         return {
@@ -338,7 +343,7 @@ export function parseEmbedPlayerFromUrl(
           isGif: true,
           hideDetails: true,
           metaUri: `https://giphy.com/gifs/${idOrFilename}`,
-          playerUri: `https://i.giphy.com/media/${idOrFilename}/200.webp`,
+          playerUri: `https://i.giphy.com/${idOrFilename}.webp`,
         }
       }
     }
@@ -357,7 +362,7 @@ export function parseEmbedPlayerFromUrl(
         isGif: true,
         hideDetails: true,
         metaUri: `https://giphy.com/gifs/${gifId}`,
-        playerUri: `https://i.giphy.com/media/${gifId}/200.webp`,
+        playerUri: `https://i.giphy.com/${gifId}.webp`,
       }
     } else if (mediaOrFilename) {
       const gifId = mediaOrFilename.split('.')[0]
@@ -367,9 +372,25 @@ export function parseEmbedPlayerFromUrl(
         isGif: true,
         hideDetails: true,
         metaUri: `https://giphy.com/gifs/${gifId}`,
-        playerUri: `https://i.giphy.com/media/${
-          mediaOrFilename.split('.')[0]
-        }/200.webp`,
+        playerUri: `https://i.giphy.com/${gifId}.webp`,
+      }
+    }
+  }
+
+  // Klipy: legacy GIF embeds stored as `app.bsky.embed.external` links pointing
+  // at static.klipy.com. The URI itself is the animated .gif, so we render it
+  // directly (thumb blob is a static placeholder; tap to load the animation).
+  // Render-only — new posts use Giphy; this is for backward-compat with old data.
+  if (urlp.hostname === 'klipy.com' || urlp.hostname.endsWith('.klipy.com')) {
+    const lastSegment = urlp.pathname.split('/').pop() || ''
+    if (lastSegment.toLowerCase().endsWith('.gif')) {
+      return {
+        type: 'klipy_gif',
+        source: 'klipy',
+        isGif: true,
+        hideDetails: true,
+        metaUri: url,
+        playerUri: url,
       }
     }
   }

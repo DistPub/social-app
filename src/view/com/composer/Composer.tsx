@@ -43,6 +43,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import * as FileSystem from 'expo-file-system'
+import {Image} from 'expo-image'
 import {type ImagePickerAsset} from 'expo-image-picker'
 import {
   AppBskyDraftCreateDraft,
@@ -153,6 +154,7 @@ import {
   composerReducer,
   createComposerState,
   type EmbedDraft,
+  type GifMedia,
   MAX_IMAGES,
   type PostAction,
   type PostDraft,
@@ -1638,6 +1640,13 @@ function ComposerEmbeds({
         <Gallery images={embed.media.images} dispatch={dispatch} />
       )}
 
+      {embed.media?.type === 'gif' && (
+        <GifEmbedPreview
+          gif={embed.media}
+          onRemove={() => dispatch({type: 'embed_remove_gif'})}
+        />
+      )}
+
       {!embed.media && embed.link && (
         <View style={[a.relative, a.mt_lg]} key={embed.link.uri}>
           <ExternalEmbedLink
@@ -1711,6 +1720,28 @@ function ComposerEmbeds({
         </View>
       ) : null}
     </>
+  )
+}
+
+function GifEmbedPreview({
+  gif,
+  onRemove,
+}: {
+  gif: GifMedia
+  onRemove: () => void
+}) {
+  const thumb = gif.thumb.source
+  return (
+    <View style={[a.relative, a.mt_lg, a.rounded_md, a.overflow_hidden]}>
+      <Image
+        source={thumb.path}
+        style={[a.w_full, {aspectRatio: thumb.width / thumb.height || 1}]}
+        contentFit="contain"
+        accessibilityIgnoresInvertColors
+        cachePolicy="none"
+      />
+      <ExternalEmbedRemoveBtn onRemove={onRemove} />
+    </View>
   )
 }
 
@@ -1846,23 +1877,29 @@ function ComposerFooter({
 
   const onSelectGif = useCallback(
     async (gif: SelectedGif) => {
-      // Convert the downloaded WebP into a ComposerImage and add it like a
-      // regular post image. On web, createComposerImage copies the blob URL
-      // into a data URI so it survives after the object URL is revoked.
+      // Turn the downloaded low-res preview WebP into a ComposerImage (the
+      // external embed's thumbnail). On web, createComposerImage copies the
+      // blob URL into a data URI so it survives after the object URL is
+      // revoked. The post stores the Giphy page URI; the HD animation is
+      // derived from the id at render time.
       const url = URL.createObjectURL(gif.blob)
       try {
         const image = await createComposerImage({
           path: url,
           width: gif.width,
           height: gif.height,
-          mime: gif.mime,
+          mime: 'image/webp',
         })
         dispatch({
-          type: 'embed_add_images',
-          images: [image],
+          type: 'embed_add_gif',
+          gif: {
+            thumb: image,
+            pageUri: `https://giphy.com/gifs/${gif.gifId}`,
+            alt: gif.alt,
+          },
         })
       } catch (e) {
-        logger.error(`Failed to add GIF image`, {safeMessage: e.message})
+        logger.error(`Failed to add GIF`, {safeMessage: e?.message})
       } finally {
         URL.revokeObjectURL(url)
       }
@@ -1947,7 +1984,7 @@ function ComposerFooter({
                 disabled={media?.type === 'images' ? isMaxImages : !!media}
                 onAdd={onImageAdd}
               />
-              <SelectGifBtn onSelectGif={onSelectGif} disabled={isMaxImages} />
+              <SelectGifBtn onSelectGif={onSelectGif} disabled={!!media} />
               {!isMobile ? (
                 <Button
                   onPress={onEmojiButtonPress}

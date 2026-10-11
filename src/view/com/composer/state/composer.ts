@@ -42,6 +42,19 @@ type VideoMedia = {
   video: VideoState
 }
 
+/**
+ * A Giphy GIF stored as an external embed. We keep the Giphy *page* URI and a
+ * low-res `preview_webp` thumbnail (uploaded as the external `thumb`); the
+ * renderer derives the full-quality animated WebP from `pageUri` at display
+ * time, so the animation never passes through Bluesky's static-izing blob CDN.
+ */
+type GifMedia = {
+  type: 'gif'
+  thumb: ComposerImage
+  pageUri: string
+  alt: string
+}
+
 type Link = {
   type: 'link'
   uri: string
@@ -52,7 +65,7 @@ type Link = {
 export type EmbedDraft = {
   // We'll always submit quote and actual media (images, video) chosen by the user.
   quote: Link | undefined
-  media: ImagesMedia | VideoMedia | undefined
+  media: ImagesMedia | VideoMedia | GifMedia | undefined
   // This field may end up ignored if we have more important things to display than a link card:
   link: Link | undefined
 }
@@ -78,6 +91,11 @@ export type PostAction =
     }
   | {type: 'embed_remove_video'}
   | {type: 'embed_update_video'; videoAction: VideoAction}
+  | {
+      type: 'embed_add_gif'
+      gif: {thumb: ComposerImage; pageUri: string; alt: string}
+    }
+  | {type: 'embed_remove_gif'}
   | {type: 'embed_add_uri'; uri: string}
   | {type: 'embed_remove_quote'}
   | {type: 'embed_remove_link'}
@@ -448,6 +466,32 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
         embed: {
           ...state.embed,
           media: nextMedia,
+        },
+      }
+    }
+    case 'embed_add_gif': {
+      return {
+        ...state,
+        embed: {
+          ...state.embed,
+          // A GIF is a single external embed — it replaces any existing media
+          // and any link card (the GIF's own page URI becomes the embed).
+          media: {
+            type: 'gif',
+            thumb: action.gif.thumb,
+            pageUri: action.gif.pageUri,
+            alt: action.gif.alt,
+          },
+          link: undefined,
+        },
+      }
+    }
+    case 'embed_remove_gif': {
+      return {
+        ...state,
+        embed: {
+          ...state.embed,
+          media: undefined,
         },
       }
     }

@@ -7,15 +7,19 @@ export const RQKEY_TRENDING = [RQKEY_ROOT, 'trending']
 export const RQKEY_SEARCH = (query: string) => [RQKEY_ROOT, 'search', query]
 
 /**
- * A GIF result from the Giphy API. Only the animated WebP rendition is exposed
- * because WebP is what we upload as a post image.
+ * A GIF result from the Giphy API.
+ *
+ * We only surface the low-resolution `preview_webp` rendition here: it is shown
+ * in the picker grid and uploaded as the external embed's `thumb`. The full
+ * animation is never stored locally — the post keeps the Giphy *page* URI, and
+ * the renderer derives the high-quality animated WebP (`i.giphy.com/{id}.webp`)
+ * from the `id` at display time. This sidesteps Bluesky's blob CDN, which
+ * strips WebP animation when a GIF is uploaded as an image blob.
  */
 export type GiphyGif = {
   id: string
   title: string
-  /** URL of the animated WebP rendition. */
-  webpUrl: string
-  /** Same rendition, smaller. Used for the picker grid thumbnails. */
+  /** Low-res animated WebP. Used for the grid and as the upload thumbnail. */
   previewUrl: string
   width: number
   height: number
@@ -44,19 +48,11 @@ const PAGE_SIZE = 30
 
 /**
  * The proxy returns Giphy's raw API payload (the proxy only injects the API
- * key; it does not rewrite renditions). Giphy's `original`/`fixed_*`
- * renditions are `.gif`, and the only WebP rendition it advertises is
- * `preview_webp` (a tiny 200px still-ish thumbnail).
- *
- * Giphy also serves the full-quality animated WebP by convention: taking the
- * `original` GIF URL and swapping `giphy.gif` -> `giphy.webp` yields an
- * animated WebP at the source dimensions (typically well under the 1MB blob
- * limit). That's what we upload. `preview_webp` is used for the grid.
+ * key; it does not rewrite renditions). `images.original.webp` is the
+ * full-quality animated WebP, and `images.preview_webp` is a small (~200px)
+ * animated WebP. We expose only `preview_webp` here — it is what we upload as
+ * the external embed thumbnail. The renderer derives the HD WebP from `id`.
  */
-function deriveAnimatedWebpUrl(gifUrl: string): string {
-  return gifUrl.replace(/\.gif(\?.*)?$/i, '.webp')
-}
-
 function normalizeGif(gif: GiphyApiGif): GiphyGif | undefined {
   const images = gif.images
   if (!images) return undefined
@@ -64,18 +60,15 @@ function normalizeGif(gif: GiphyApiGif): GiphyGif | undefined {
   const original = images.original
   const previewWebp = images.preview_webp
 
-  if (!original?.url) return undefined
+  if (!original?.url || !previewWebp?.url) return undefined
 
   const width = Number(original.width) || 0
   const height = Number(original.height) || 0
-  const animatedWebpUrl = deriveAnimatedWebpUrl(original.url)
 
   return {
     id: gif.id,
     title: gif.title || '',
-    webpUrl: animatedWebpUrl,
-    // Grid thumbnail: Giphy's dedicated webp preview, else the animated webp.
-    previewUrl: previewWebp?.url || animatedWebpUrl,
+    previewUrl: previewWebp.url,
     width,
     height,
   }

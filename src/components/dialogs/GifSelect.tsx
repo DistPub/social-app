@@ -33,39 +33,19 @@ import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 
 /**
- * A selected GIF, already downloaded as a WebP blob so the composer can treat
- * it as a regular post image.
+ * A selected GIF. We only download the low-res `preview_webp` as a blob and use
+ * it as the external embed's thumbnail. The post keeps the Giphy page URI, and
+ * the renderer derives the full-quality animated WebP from `gifId` at display
+ * time — so we never upload the (large) HD WebP as a static blob.
  */
 export type SelectedGif = {
+  /** Low-res animated WebP preview, uploaded later as the external thumb. */
   blob: Blob
-  /** Object URL for local preview. */
-  previewUri: string
   width: number
   height: number
-  mime: string
   alt: string
-}
-
-/** Bluesky rejects image blobs larger than 1MB. */
-const MAX_GIF_BYTES = 1_000_000
-
-/**
- * Download the animated WebP for a Giphy result. The full-quality
- * `giphy.webp` rendition can exceed Bluesky's 1MB blob limit for long GIFs, in
- * which case we fall back to Giphy's `preview_webp` (a small but still
- * animated WebP) so we never lose animation to a static re-encode.
- */
-async function fetchGifWebp(gif: GiphyGif): Promise<Blob> {
-  const full = await fetchBlob(gif.webpUrl)
-  if (full && full.size <= MAX_GIF_BYTES) return full
-
-  if (gif.previewUrl && gif.previewUrl !== gif.webpUrl) {
-    const preview = await fetchBlob(gif.previewUrl)
-    if (preview && preview.size <= MAX_GIF_BYTES) return preview
-  }
-
-  if (full) throw new Error('GIF too large to upload')
-  throw new Error('Failed to download GIF')
+  /** Giphy id — used to build the page URI and derive the HD WebP at render. */
+  gifId: string
 }
 
 async function fetchBlob(url: string): Promise<Blob | null> {
@@ -164,18 +144,14 @@ function GifList({
     async (gif: GiphyGif) => {
       try {
         setLoadingId(gif.id)
-        const blob = await fetchGifWebp(gif)
-        const previewUri =
-          typeof URL !== 'undefined' && URL.createObjectURL
-            ? URL.createObjectURL(blob)
-            : gif.webpUrl
+        const blob = await fetchBlob(gif.previewUrl)
+        if (!blob) throw new Error('Failed to download GIF preview')
         onSelectGif({
           blob,
-          previewUri,
           width: gif.width,
           height: gif.height,
-          mime: 'image/webp',
           alt: gif.title,
+          gifId: gif.id,
         })
       } catch {
         setLoadingId(null)

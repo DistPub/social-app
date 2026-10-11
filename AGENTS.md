@@ -308,7 +308,11 @@ expo export:web && node ./scripts/post-web-build.js && node ./scripts/generate-s
 
 ### GIF（Giphy，Web only）
 
-Web 端 GIF 已从旧 **Tenor + 自建 CDN** 方案完整重写为 **Giphy** 方案。**没有 tenor 逻辑了**——搜索、选择、上传、渲染全部走新的 Giphy 路径，任何地方看到 tenor 残留都属回归。
+Web 端 GIF 选 **Giphy**，帖子以 **`app.bsky.embed.external`** 存储（**不是**图片上传），**单张**。渲染时按 id 反拼动画 webp 直链播放。仅渲染层兼容旧 **Klipy** 外部链接 GIF（见末尾）。没有 tenor 逻辑了——任何 tenor 残留都属回归。
+
+**为什么是 external 而不是图片 blob**
+
+fatesky/Bluesky 的 blob CDN 把上传的 webp 动画压成静态帧，所以把 GIF 当图片上传会丢动画。改法：帖子里只存 Giphy **页面地址** `https://giphy.com/gifs/{id}` + 一张低清 `preview_webp` 缩略图（上传为 `external.thumb`）；HD 动画 webp 在渲染时**直接从 giphy 自己的 CDN** 拉，绕过 blob CDN。
 
 **代理（关键）**
 
@@ -316,25 +320,39 @@ Web 端 GIF 已从旧 **Tenor + 自建 CDN** 方案完整重写为 **Giphy** 方
 - 客户端请求：`{GIF_SERVICE}/v1/gifs/search?q=&offset=&limit=` 与 `{GIF_SERVICE}/v1/gifs/trending?offset=&limit=`
 - 代理返回 **Giphy 原始响应**（只注入 key，不重写 rendition）
 
-**数据与「只展示 webp」的取法（`src/state/queries/giphy.ts` 单一事实来源）**
+**数据模型（`src/state/queries/giphy.ts` 单一事实来源）**
 
-- Giphy 原始响应里 `original`/`fixed_*` 都是 `.gif`；唯一官方 webp 是 `preview_webp`（约 200px 小图）
-- **全质量动画 webp 靠命名约定**：把 `original.url` 的 `giphy.gif` 换成 `giphy.webp` 即得源尺寸动画 webp（实测 480×478 / ~335KB）。`?w=`/`?h=` 参数**无效**；`giphy-downsized.webp` **403 不可用**
-- 归一化：`webpUrl = original.url.replace(/\.gif$/, '.webp')`（上传源），`previewUrl = preview_webp.url`（网格缩略图）
-- **Bluesky 图片 blob 上限 1MB**（`app.bsky.embed.images#image` 是 `accept=image/*`，**webp 合法**）。若全质量 webp > 1MB，回退 `preview_webp`（仍是动画，不丢帧，**不要**用 canvas 降级——会丢动画）
+- `GiphyGif = {id, title, previewUrl, width, height}`
+- `previewUrl = images.preview_webp.url`（约 200px 低清动画 webp，用作网格缩略图 + 上传缩略图）
+- **不要**上传全质量 webp（会经 blob CDN 变静态）；HD 动画由渲染层反拼
 
-**上传即普通图片（不是 external embed）**
+**作曲器（`GifSelect.tsx` → `Composer.tsx` → `composer.ts`）**
 
-- 选中 GIF → `GifSelect.tsx` 的 `fetchGifWebp()` 下载 webp blob → 回调 `SelectedGif {blob, previewUri, width, height, mime:'image/webp', alt}`
-- `Composer.tsx` 的 `onSelectGif`：`createComposerImage({path: URL.createObjectURL(blob), mime:'image/webp'})` → `dispatch({type:'embed_add_images', images:[image]})`。GIF 与照片**同一 images 数组**、共享 4 张上限（`SelectGifBtn disabled={isMaxImages}`）
-- `src/state/gallery.ts` 的 `compressImage`：`mime === 'image/webp'` 时**原样返回、不重编码**（`expo-image-manipulator` 会把动画压成静态帧）；尺寸判定用 `getSourceSize()`（内部用 `getInfoAsync`，**不是** `getInfo`）
-- 发布走 `app.bsky.embed.images`（`src/lib/api/index.ts` 的 `resolveMedia` images 分支），**已删除**旧的 gif → `app.bsky.embed.external` 分支
+- `GifSelect` 单选：下载 `previewUrl` 为 blob → `SelectedGif {blob, width, height, alt, gifId}`
+- `Composer.onSelectGif`：`createComposerImage({path: URL.createObjectURL(blob), mime:'image/webp'})` → `dispatch({type:'embed_add_gif', gif:{thumb: image, pageUri:`https://giphy.com/gifs/${gifId}`, alt}})`
+- `composer.ts`：`GifMedia {type:'gif', thumb, pageUri, alt}`；`embed_add_gif`/`embed_remove_gif`（单选，有任意 media 时 `SelectGifBtn` 禁用）
+- `GifEmbedPreview` 在 `ComposerEmbeds` 里渲染缩略图 + 删除按钮
 
-**已删除（不要再引回）**
+**发布（`src/lib/api/index.ts` 的 `resolveMedia`）**
 
-- `src/state/queries/tenor.ts`、`src/state/queries/giphy.ts` 之外的 gif query；`src/lib/gif-alt-text.ts`；`src/view/com/composer/GifAltText.tsx`；`src/components/Post/Embed/ExternalEmbed/Gif.tsx`
-- `embed-player.ts` 的 `parseTenorGif` / `isTenorGifUri` / `tenor` source / `tenor_gif`；`ExternalEmbed/index.tsx` 的 tenor 分支；`MediaPreview.tsx` 的 `isTenorGifUri` 分支
-- `composer.ts` 的 `GifMedia` 与 `embed_add_gif`/`embed_update_gif`/`embed_remove_gif`；草稿的 `serializeGif`/`parseGifFromUrl`/`GifDisplay`；`externalEmbeds.tenor` 偏好；analytics 的 `hasGif`
+- gif 分支：上传 `thumb` blob → 返回 `app.bsky.embed.external {uri: pageUri, title: alt, thumb}`（**已删除**旧的 gif → `app.bsky.embed.images` 上传路径）
+
+**渲染（`embed-player.ts` + `ExternalEmbed/ExternalGif.tsx`）**
+
+- `parseEmbedPlayerFromUrl` 识别 `giphy.com/gifs/{id}` → `isGif:true`，`playerUri = https://i.giphy.com/{id}.webp`（giphy 忽略尺寸后缀，始终是源尺寸 HD 动画直链）
+- `ExternalGif`：先显示 `link.thumb`（低清缩略图占位），**点击** → 首次弹 consent → `Image.prefetch(playerUri)` → 切到动画 webp（点击播放，不自动进视口播放，按产品决定）
+- 用户若把 giphy 设为 `hide`，则回退成普通外链卡片
+
+**Klipy 旧数据（仅渲染，向后兼容）**
+
+- 旧帖把 GIF 存成 `app.bsky.embed.external`，`uri` 形如 `https://static.klipy.com/ii/{hash}/{xx}/{yy}/{id}.gif?hh=&ww=&mp4=&webm=`（uri 本身就是动画 gif）
+- 渲染层（`embed-player.ts`）识别 `*.klipy.com` 且路径末段 `.gif` → `type:'klipy_gif'`（复用 `ExternalGif`，`playerUri = uri`）。**仅渲染，作曲器不改**（新帖走 Giphy）
+- `embedPlayerSources` / `externalEmbedLabels` 已加 `klipy`
+
+**已删除 / 不要引回**
+
+- tenor 全部：`src/state/queries/tenor.ts`、`parseTenorGif`/`isTenorGifUri`、`GifAltText`、`embed-player` 的 `tenor` source/`tenor_gif`、草稿 `serializeGif`/`parseGifFromUrl`/`GifDisplay`、`externalEmbeds.tenor` 偏好、analytics `hasGif`
+- **旧「GIF 当图片上传」方案**：`embed_add_images` 传 gif、`gallery.compressImage` 的 webp 原样返回、`deriveAnimatedWebpUrl`/`webpUrl`（全质量 webp 上传会丢动画，已被 external 方案取代）
 
 
 ## 代码规范速查

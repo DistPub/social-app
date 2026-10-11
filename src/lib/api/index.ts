@@ -369,6 +369,23 @@ async function resolveMedia(
         videoDraft.video.mimeType === 'image/gif' ? 'gif' : 'default',
     }
   }
+  if (embedDraft.media?.type === 'gif') {
+    // The GIF is stored as an external embed: the Giphy page URI plus a
+    // low-res thumbnail blob. The HD animation is loaded directly from Giphy
+    // at render time, so it never goes through Bluesky's static-izing blob CDN.
+    onStateChange?.(t`Uploading GIF thumbnail...`)
+    const {path, mime} = embedDraft.media.thumb.source
+    const response = await uploadBlob(agent, path, mime)
+    return {
+      $type: 'app.bsky.embed.external',
+      external: {
+        uri: embedDraft.media.pageUri,
+        title: embedDraft.media.alt || '',
+        description: '',
+        thumb: response.data.blob,
+      },
+    }
+  }
   if (embedDraft.link) {
     const resolvedLink = await fetchResolveLinkQuery(
       queryClient,
