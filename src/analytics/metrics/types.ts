@@ -243,12 +243,7 @@ export type Events = {
   }
   'composer:open': {
     logContext:
-      | 'Fab'
-      | 'PostReply'
-      | 'QuotePost'
-      | 'ProfileFeed'
-      | 'Deeplink'
-      | 'Other'
+      'Fab' | 'PostReply' | 'QuotePost' | 'ProfileFeed' | 'Deeplink' | 'Other'
     isReply: boolean
     hasQuote: boolean
     hasDraft: boolean
@@ -258,7 +253,6 @@ export type Events = {
     hasText: boolean
     hasImages: boolean
     hasVideo: boolean
-    hasGif: boolean
     hasQuote: boolean
     hasLink: boolean
     postCount: number
@@ -269,7 +263,6 @@ export type Events = {
     hasText: boolean
     hasImages: boolean
     hasVideo: boolean
-    hasGif: boolean
     postCount: number
   }
   'draft:delete': {
@@ -483,10 +476,7 @@ export type Events = {
   }
   'suggestedUser:press': {
     logContext:
-      | 'Explore'
-      | 'InterstitialDiscover'
-      | 'InterstitialProfile'
-      | 'Onboarding'
+      'Explore' | 'InterstitialDiscover' | 'InterstitialProfile' | 'Onboarding'
     recId?: number | string
     position: number
     suggestedDid: string
@@ -543,10 +533,7 @@ export type Events = {
   }
   'chat:open': {
     logContext:
-      | 'ProfileHeader'
-      | 'NewChatDialog'
-      | 'ChatsList'
-      | 'SendViaChatDialog'
+      'ProfileHeader' | 'NewChatDialog' | 'ChatsList' | 'SendViaChatDialog'
   }
   'starterPack:addUser': {
     starterPack?: string

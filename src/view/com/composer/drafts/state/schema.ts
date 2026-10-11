@@ -17,20 +17,6 @@ export type LocalMediaDisplay = {
 }
 
 /**
- * GIF display data (parsed from external embed URL)
- */
-export type GifDisplay = {
-  /** Full URL with dimensions */
-  url: string
-  /** Width */
-  width: number
-  /** Height */
-  height: number
-  /** Alt text */
-  alt: string
-}
-
-/**
  * Post content for display in draft list
  */
 export type DraftPostDisplay = {
@@ -41,8 +27,6 @@ export type DraftPostDisplay = {
   images?: LocalMediaDisplay[]
   /** Video reference */
   video?: LocalMediaDisplay
-  /** GIF data (from URL) */
-  gif?: GifDisplay
 }
 
 /**

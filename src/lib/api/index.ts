@@ -26,10 +26,7 @@ import {isNetworkError} from '#/lib/strings/errors'
 import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
 import {logger} from '#/logger'
 import {compressImage} from '#/state/gallery'
-import {
-  fetchResolveGifQuery,
-  fetchResolveLinkQuery,
-} from '#/state/queries/resolve-link'
+import {fetchResolveLinkQuery} from '#/state/queries/resolve-link'
 import {
   createThreadgateRecord,
   threadgateAllowUISettingToAllowRecordValue,
@@ -39,7 +36,6 @@ import {
   type PostDraft,
   type ThreadDraft,
 } from '#/view/com/composer/state/composer'
-import {createGIFDescription} from '../gif-alt-text'
 import {uploadBlob} from './upload-blob'
 
 export {uploadBlob}
@@ -63,7 +59,10 @@ export async function post(
     | Promise<AppBskyFeedPost.Record['reply']>
     | AppBskyFeedPost.Record['reply']
     | undefined
-  if ((typeof opts.replyTo == 'object' && opts.replyTo.uri) || (typeof opts.replyTo == 'string' && opts.replyTo)) {
+  if (
+    (typeof opts.replyTo == 'object' && opts.replyTo.uri) ||
+    (typeof opts.replyTo == 'string' && opts.replyTo)
+  ) {
     // Not awaited to avoid waterfalls.
     replyPromise = resolveReply(agent, opts.replyTo)
   }
@@ -208,12 +207,10 @@ async function resolveRT(agent: BskyAgent, richtext: RichText) {
 }
 
 async function resolveReply(agent: BskyAgent, replyTo: string | any) {
-  let atUri = null;
-  if (typeof replyTo == 'string')
-    atUri = replyTo
-  else
-    atUri = replyTo.uri
-  
+  let atUri = null
+  if (typeof replyTo == 'string') atUri = replyTo
+  else atUri = replyTo.uri
+
   const replyToUrip = new AtUri(atUri)
   let parentPost = null
   try {
@@ -221,12 +218,12 @@ async function resolveReply(agent: BskyAgent, replyTo: string | any) {
       repo: replyToUrip.host,
       rkey: replyToUrip.rkey,
     })
-  }  catch (e: any) {
+  } catch (e: any) {
     if (typeof replyTo == 'object') {
       return {root: replyTo, parent: replyTo}
     }
   }
-  
+
   if (parentPost) {
     const parentRef = {
       uri: parentPost.uri,
@@ -370,30 +367,6 @@ async function resolveMedia(
       aspectRatio,
       presentation:
         videoDraft.video.mimeType === 'image/gif' ? 'gif' : 'default',
-    }
-  }
-  if (embedDraft.media?.type === 'gif') {
-    const gifDraft = embedDraft.media
-    const resolvedGif = await fetchResolveGifQuery(
-      queryClient,
-      agent,
-      gifDraft.gif,
-    )
-    let blob: BlobRef | undefined
-    if (resolvedGif.thumb) {
-      onStateChange?.(t`Uploading link thumbnail...`)
-      const {path, mime} = resolvedGif.thumb.source
-      const response = await uploadBlob(agent, path, mime)
-      blob = response.data.blob
-    }
-    return {
-      $type: 'app.bsky.embed.external',
-      external: {
-        uri: resolvedGif.uri,
-        title: resolvedGif.title,
-        description: createGIFDescription(resolvedGif.title, gifDraft.alt),
-        thumb: blob,
-      },
     }
   }
   if (embedDraft.link) {

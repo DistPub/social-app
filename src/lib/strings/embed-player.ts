@@ -1,6 +1,6 @@
 import {Dimensions} from 'react-native'
 
-import {IS_WEB, IS_WEB_SAFARI} from '#/env'
+import {IS_WEB} from '#/env'
 
 const {height: SCREEN_HEIGHT} = Dimensions.get('window')
 
@@ -22,7 +22,6 @@ export const embedPlayerSources = [
   'appleMusic',
   'vimeo',
   'giphy',
-  'tenor',
   'flickr',
   'bandcamp',
 ] as const
@@ -43,7 +42,6 @@ export type EmbedPlayerType =
   | 'apple_music_song'
   | 'vimeo_video'
   | 'giphy_gif'
-  | 'tenor_gif'
   | 'flickr_album'
   | 'bandcamp_album'
   | 'bandcamp_track'
@@ -54,7 +52,6 @@ export const externalEmbedLabels: Record<EmbedPlayerSource, string> = {
   vimeo: 'Vimeo',
   twitch: 'Twitch',
   giphy: 'GIPHY',
-  tenor: 'Tenor',
   spotify: 'Spotify',
   appleMusic: 'Apple Music',
   soundcloud: 'SoundCloud',
@@ -377,20 +374,6 @@ export function parseEmbedPlayerFromUrl(
     }
   }
 
-  const tenorGif = parseTenorGif(urlp)
-  if (tenorGif.success) {
-    const {playerUri, dimensions} = tenorGif
-
-    return {
-      type: 'tenor_gif',
-      source: 'tenor',
-      isGif: true,
-      hideDetails: true,
-      playerUri,
-      dimensions,
-    }
-  }
-
   // this is a standard flickr path! we can use the embedder for albums and groups, so validate the path
   if (urlp.hostname === 'www.flickr.com' || urlp.hostname === 'flickr.com') {
     let i = urlp.pathname.length - 1
@@ -555,73 +538,5 @@ export function getGiphyMetaUri(url: URL) {
     if (params && params.type === 'giphy_gif') {
       return params.metaUri
     }
-  }
-}
-
-export function parseTenorGif(urlp: URL):
-  | {success: false}
-  | {
-      success: true
-      playerUri: string
-      dimensions: {height: number; width: number}
-  } {
-  const isFateskyCDN = urlp.host === 'fatesky-cdn.hukoubook.com'
-  let [_, id, filename] = isFateskyCDN ? urlp.pathname.slice('/gifs'.length).split('/') : urlp.pathname.split('/')
-
-  if (!id || !filename) {
-    return {success: false}
-  }
-
-  if (!id.includes('AAAAC')) {
-    return {success: false}
-  }
-
-  const h = urlp.searchParams.get('hh')
-  const w = urlp.searchParams.get('ww')
-
-  if (!h || !w) {
-    return {success: false}
-  }
-
-  const dimensions = {
-    height: Number(h),
-    width: Number(w),
-  }
-
-  // Validate dimensions are valid positive numbers
-  if (
-    isNaN(dimensions.height) ||
-    isNaN(dimensions.width) ||
-    dimensions.height <= 0 ||
-    dimensions.width <= 0
-  ) {
-    return {success: false}
-  }
-
-  if (IS_WEB) {
-    if (IS_WEB_SAFARI) {
-      id = id.replace('AAAAC', 'AAAP1')
-      filename = filename.replace('.gif', '.mp4')
-    } else {
-      id = id.replace('AAAAC', 'AAAP3')
-      filename = filename.replace('.gif', '.webm')
-    }
-  } else {
-    id = id.replace('AAAAC', 'AAAAM')
-  }
-
-  return {
-    success: true,
-    playerUri: `https://fatesky-cdn.hukoubook.com/gifs/${id}/${filename}`,
-    dimensions,
-  }
-}
-
-export function isTenorGifUri(url: URL | string) {
-  try {
-    return parseTenorGif(typeof url === 'string' ? new URL(url) : url).success
-  } catch {
-    // Invalid URL
-    return false
   }
 }

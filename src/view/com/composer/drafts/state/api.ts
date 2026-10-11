@@ -9,7 +9,6 @@ import {getDeviceName} from '#/lib/deviceName'
 import {getImageDim} from '#/lib/media/manip'
 import {mimeToExt} from '#/lib/media/video/util'
 import {type ComposerImage} from '#/state/gallery'
-import {type Gif} from '#/state/queries/tenor'
 import {threadgateAllowUISettingToAllowRecordValue} from '#/state/queries/threadgate/util'
 import {createPublicAgent} from '#/state/session/agent'
 import {
@@ -23,8 +22,6 @@ import {getDeviceId} from '#/analytics/identifiers'
 import {logger} from './logger'
 import {type DraftPostDisplay, type DraftSummary} from './schema'
 import * as storage from './storage'
-
-const TENOR_HOSTNAME = 'media.tenor.com'
 
 /**
  * Video data from a draft that needs to be restored by re-processing.
@@ -117,11 +114,6 @@ async function postDraftToServerPost(
       const video = await serializeVideo(post.embed.media.video, localRefPaths)
       if (video) {
         draftPost.embedVideos = [video]
-      }
-    } else if (post.embed.media.type === 'gif') {
-      const external = serializeGif(post.embed.media)
-      if (external) {
-        draftPost.embedExternals = [external]
       }
     }
   }
@@ -235,39 +227,6 @@ async function serializeVideo(
 }
 
 /**
- * Serialize GIF to server format as external embed.
- * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH&alt=ALT_TEXT
- */
-function serializeGif(gifMedia: {
-  type: 'gif'
-  gif: Gif
-  alt: string
-}): AppBskyDraftDefs.DraftEmbedExternal | undefined {
-  const gif = gifMedia.gif
-  const gifFormat = gif.media_formats.gif || gif.media_formats.tinygif
-
-  if (!gifFormat?.url) {
-    return undefined
-  }
-
-  // Build URL with dimensions and alt text in query params
-  const url = new URL(gifFormat.url)
-  if (gifFormat.dims) {
-    url.searchParams.set('ww', String(gifFormat.dims[0]))
-    url.searchParams.set('hh', String(gifFormat.dims[1]))
-  }
-  // Store alt text if present
-  if (gifMedia.alt) {
-    url.searchParams.set('alt', gifMedia.alt)
-  }
-
-  return {
-    $type: 'app.bsky.draft.defs#draftEmbedExternal',
-    uri: url.toString(),
-  }
-}
-
-/**
  * Convert server DraftView to DraftSummary for list display.
  * Also checks which media files exist locally.
  */
@@ -293,7 +252,6 @@ export function draftViewToSummary({
   const posts: DraftPostDisplay[] = view.draft.posts.map((post, index) => {
     const images: DraftPostDisplay['images'] = []
     const videos: DraftPostDisplay['video'][] = []
-    let gif: DraftPostDisplay['gif']
 
     // Process images
     if (post.embedImages) {
@@ -329,17 +287,7 @@ export function draftViewToSummary({
       }
     }
 
-    // Process externals (check for GIFs)
-    if (post.embedExternals) {
-      for (const ext of post.embedExternals) {
-        const gifData = parseGifFromUrl(ext.uri)
-        if (gifData) {
-          meta.mediaCount++
-          meta.hasMedia = true
-          gif = gifData
-        }
-      }
-    }
+    // Legacy GIF external embeds are no longer produced or restored.
 
     if (post.embedRecords && post.embedRecords.length > 0) {
       meta.quoteCount += post.embedRecords.length
@@ -351,7 +299,6 @@ export function draftViewToSummary({
       text: post.text || '',
       images: images.length > 0 ? images : undefined,
       video: videos[0], // Only one video per post
-      gif,
     }
   })
 
@@ -366,39 +313,6 @@ export function draftViewToSummary({
     draft: view.draft,
     posts,
     meta,
-  }
-}
-
-/**
- * Parse GIF data from a Tenor URL.
- * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH&alt=ALT_TEXT
- */
-function parseGifFromUrl(
-  uri: string,
-): {url: string; width: number; height: number; alt: string} | undefined {
-  try {
-    const url = new URL(uri)
-    if (url.hostname !== TENOR_HOSTNAME) {
-      return undefined
-    }
-
-    const height = parseInt(url.searchParams.get('hh') || '', 10)
-    const width = parseInt(url.searchParams.get('ww') || '', 10)
-    const alt = url.searchParams.get('alt') || ''
-
-    if (!height || !width) {
-      return undefined
-    }
-
-    // Strip our custom params to get clean base URL
-    // This prevents double query strings when resolveGif() adds params again
-    url.searchParams.delete('ww')
-    url.searchParams.delete('hh')
-    url.searchParams.delete('alt')
-
-    return {url: url.toString(), width, height, alt}
-  } catch {
-    return undefined
   }
 }
 
@@ -466,7 +380,7 @@ export async function draftToComposerPosts(
               height,
               mime: 'image/jpeg',
             },
-          } as ComposerImage
+          }
         })
 
         const images = (await Promise.all(imagePromises)).filter(
@@ -474,44 +388,6 @@ export async function draftToComposerPosts(
         )
         if (images.length > 0) {
           embed.media = {type: 'images', images}
-        }
-      }
-
-      // Restore GIF from external embed
-      if (post.embedExternals) {
-        for (const ext of post.embedExternals) {
-          const gifData = parseGifFromUrl(ext.uri)
-          if (gifData) {
-            // Reconstruct a Gif object with all required properties
-            const mediaObject = {
-              url: gifData.url,
-              dims: [gifData.width, gifData.height] as [number, number],
-              duration: 0,
-              size: 0,
-            }
-            embed.media = {
-              type: 'gif',
-              gif: {
-                id: '',
-                created: 0,
-                hasaudio: false,
-                hascaption: false,
-                flags: '',
-                tags: [],
-                title: '',
-                content_description: gifData.alt || '',
-                itemurl: '',
-                url: gifData.url, // Required for useResolveGifQuery
-                media_formats: {
-                  gif: mediaObject,
-                  tinygif: mediaObject,
-                  preview: mediaObject,
-                },
-              } as Gif,
-              alt: gifData.alt,
-            }
-            break
-          }
         }
       }
 
@@ -548,14 +424,11 @@ export async function draftToComposerPosts(
         embed.quote = {type: 'link', uri: url}
       }
 
-      // Restore link embed (only if not a GIF)
-      if (post.embedExternals && !embed.media) {
+      // Restore link embed
+      if (post.embedExternals) {
         for (const ext of post.embedExternals) {
-          const gifData = parseGifFromUrl(ext.uri)
-          if (!gifData) {
-            embed.link = {type: 'link', uri: ext.uri}
-            break
-          }
+          embed.link = {type: 'link', uri: ext.uri}
+          break
         }
       }
 

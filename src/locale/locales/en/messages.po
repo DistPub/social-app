@@ -6310,8 +6310,8 @@ msgstr ""
 msgid "No expiry set"
 msgstr ""
 
-#: src/components/dialogs/GifSelect.tsx:219
-msgid "No featured GIFs found. There may be an issue with Tenor."
+#: src/components/dialogs/GifSelect.tsx:432
+msgid "No featured GIFs found. There may be an issue with Giphy."
 msgstr ""
 
 #: src/screens/StarterPack/Wizard/StepFeeds.tsx:122
@@ -8477,6 +8477,7 @@ msgid "Search for posts, users, or feeds"
 msgstr ""
 
 #: src/components/dialogs/GifSelect.tsx:167
+#: src/components/dialogs/GifSelect.tsx:376
 msgid "Search GIFs"
 msgstr ""
 
@@ -8504,8 +8505,8 @@ msgstr ""
 msgid "Search profiles"
 msgstr ""
 
-#: src/components/dialogs/GifSelect.tsx:168
-msgid "Search Tenor"
+#: src/components/dialogs/GifSelect.tsx:376
+msgid "Search profiles"
 msgstr ""
 
 #: src/screens/Profile/ProfileSearch.tsx:38
@@ -9800,8 +9801,8 @@ msgstr ""
 msgid "There was a problem with your internet connection, please try again"
 msgstr ""
 
-#: src/components/dialogs/GifSelect.tsx:214
-msgid "There was an issue connecting to Tenor."
+#: src/components/dialogs/GifSelect.tsx:432
+msgid "There was an issue connecting to Giphy."
 msgstr ""
 
 #: src/screens/Profile/components/ProfileFeedHeader.tsx:179

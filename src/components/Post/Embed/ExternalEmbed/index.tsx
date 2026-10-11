@@ -5,7 +5,6 @@ import {type AppBskyEmbedExternal} from '@atproto/api'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
-import {parseAltFromGIFDescription} from '#/lib/gif-alt-text'
 import {useHaptics} from '#/lib/haptics'
 import {shareUrl} from '#/lib/sharing'
 import {parseEmbedPlayerFromUrl} from '#/lib/strings/embed-player'
@@ -19,18 +18,15 @@ import {Text} from '#/components/Typography'
 import {IS_NATIVE} from '#/env'
 import {ExternalGif} from './ExternalGif'
 import {ExternalPlayer} from './ExternalPlayer'
-import {GifEmbed} from './Gif'
 
 export const ExternalEmbed = ({
   link,
   onOpen,
   style,
-  hideAlt,
 }: {
   link: AppBskyEmbedExternal.ViewExternal
   onOpen?: () => void
   style?: StyleProp<ViewStyle>
-  hideAlt?: boolean
 }) => {
   const {_} = useLingui()
   const t = useTheme()
@@ -59,38 +55,23 @@ export const ExternalEmbed = ({
     }
   }, [link.uri, playHaptic])
 
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(false)
   const containerRef = useRef<any>(null)
   useEffect(() => {
-    const node = containerRef.current;
+    const node = containerRef.current
     if (!(node instanceof HTMLElement)) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         // 当图片进入或离开视口时自动切换
-        setShown(entry.isIntersecting);
+        setShown(entry.isIntersecting)
       },
-      { threshold: 0.1 } // 露出来 10% 执行
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [containerRef]);
-
-  if (embedPlayerParams?.source === 'tenor') {
-    const parsedAlt = parseAltFromGIFDescription(link.description)
-    return (
-      <View style={style}>
-        <GifEmbed
-          params={embedPlayerParams}
-          thumb={link.thumb}
-          altText={parsedAlt.alt}
-          isPreferredAltText={parsedAlt.isPreferred}
-          hideAlt={hideAlt}
-        />
-      </View>
+      {threshold: 0.1}, // 露出来 10% 执行
     )
-  }
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [containerRef])
 
   return (
     <Link

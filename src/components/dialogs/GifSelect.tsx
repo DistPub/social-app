@@ -13,11 +13,10 @@ import {useLingui} from '@lingui/react'
 
 import {cleanError} from '#/lib/strings/errors'
 import {
-  type Gif,
-  tenorUrlToBskyGifUrl,
-  useFeaturedGifsQuery,
+  type GiphyGif,
   useGifSearchQuery,
-} from '#/state/queries/tenor'
+  useTrendingGifsQuery,
+} from '#/state/queries/giphy'
 import {ErrorScreen} from '#/view/com/util/error/ErrorScreen'
 import {ErrorBoundary} from '#/view/com/util/ErrorBoundary'
 import {type ListMethods} from '#/view/com/util/List'
@@ -29,8 +28,55 @@ import {useThrottledValue} from '#/components/hooks/useThrottledValue'
 import {ArrowLeft_Stroke2_Corner0_Rounded as Arrow} from '#/components/icons/Arrow'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as Search} from '#/components/icons/MagnifyingGlass'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
+import {Loader} from '#/components/Loader'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
+
+/**
+ * A selected GIF, already downloaded as a WebP blob so the composer can treat
+ * it as a regular post image.
+ */
+export type SelectedGif = {
+  blob: Blob
+  /** Object URL for local preview. */
+  previewUri: string
+  width: number
+  height: number
+  mime: string
+  alt: string
+}
+
+/** Bluesky rejects image blobs larger than 1MB. */
+const MAX_GIF_BYTES = 1_000_000
+
+/**
+ * Download the animated WebP for a Giphy result. The full-quality
+ * `giphy.webp` rendition can exceed Bluesky's 1MB blob limit for long GIFs, in
+ * which case we fall back to Giphy's `preview_webp` (a small but still
+ * animated WebP) so we never lose animation to a static re-encode.
+ */
+async function fetchGifWebp(gif: GiphyGif): Promise<Blob> {
+  const full = await fetchBlob(gif.webpUrl)
+  if (full && full.size <= MAX_GIF_BYTES) return full
+
+  if (gif.previewUrl && gif.previewUrl !== gif.webpUrl) {
+    const preview = await fetchBlob(gif.previewUrl)
+    if (preview && preview.size <= MAX_GIF_BYTES) return preview
+  }
+
+  if (full) throw new Error('GIF too large to upload')
+  throw new Error('Failed to download GIF')
+}
+
+async function fetchBlob(url: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return await res.blob()
+  } catch {
+    return null
+  }
+}
 
 export function GifSelectDialog({
   controlRef,
@@ -39,7 +85,8 @@ export function GifSelectDialog({
 }: {
   controlRef: React.RefObject<{open: () => void} | null>
   onClose?: () => void
-  onSelectGif: (gif: Gif) => void
+  /** Called with the downloaded WebP blob once the user picks a GIF. */
+  onSelectGif: (gif: SelectedGif) => void
 }) {
   const control = Dialog.useDialogControl()
 
@@ -48,7 +95,7 @@ export function GifSelectDialog({
   }))
 
   const onSelectGif = useCallback(
-    (gif: Gif) => {
+    (gif: SelectedGif) => {
       control.close(() => onSelectGifProp(gif))
     },
     [control, onSelectGifProp],
@@ -81,7 +128,7 @@ function GifList({
   onSelectGif,
 }: {
   control: Dialog.DialogControlProps
-  onSelectGif: (gif: Gif) => void
+  onSelectGif: (gif: SelectedGif) => void
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -91,10 +138,11 @@ function GifList({
   const [undeferredSearch, setSearch] = useState('')
   const search = useThrottledValue(undeferredSearch, 500)
   const {height} = useWindowDimensions()
+  const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const isSearching = search.length > 0
 
-  const trendingQuery = useFeaturedGifsQuery()
+  const trendingQuery = useTrendingGifsQuery()
   const searchQuery = useGifSearchQuery(search)
 
   const {
@@ -112,11 +160,41 @@ function GifList({
     return data?.pages.flatMap(page => page.results) || []
   }, [data])
 
-  const renderItem = useCallback(
-    ({item}: {item: Gif}) => {
-      return <GifPreview gif={item} onSelectGif={onSelectGif} />
+  const handleSelect = useCallback(
+    async (gif: GiphyGif) => {
+      try {
+        setLoadingId(gif.id)
+        const blob = await fetchGifWebp(gif)
+        const previewUri =
+          typeof URL !== 'undefined' && URL.createObjectURL
+            ? URL.createObjectURL(blob)
+            : gif.webpUrl
+        onSelectGif({
+          blob,
+          previewUri,
+          width: gif.width,
+          height: gif.height,
+          mime: 'image/webp',
+          alt: gif.title,
+        })
+      } catch {
+        setLoadingId(null)
+      }
     },
     [onSelectGif],
+  )
+
+  const renderItem = useCallback(
+    ({item}: {item: GiphyGif}) => {
+      return (
+        <GifPreview
+          gif={item}
+          loading={loadingId === item.id}
+          onSelectGif={handleSelect}
+        />
+      )
+    },
+    [handleSelect, loadingId],
   )
 
   const onEndReached = useCallback(() => {
@@ -165,7 +243,7 @@ function GifList({
           <TextField.Icon icon={Search} />
           <TextField.Input
             label={_(msg`Search GIFs`)}
-            placeholder={_(msg`Search Tenor`)}
+            placeholder={_(msg`Search GIFs`)}
             onChangeText={text => {
               setSearch(text)
               listRef.current?.scrollToOffset({offset: 0, animated: false})
@@ -211,12 +289,12 @@ function GifList({
                 sideBorders={false}
                 topBorder={false}
                 errorTitle={_(msg`Failed to load GIFs`)}
-                errorMessage={_(msg`There was an issue connecting to Tenor.`)}
+                errorMessage={_(msg`There was an issue connecting to Giphy.`)}
                 emptyMessage={
                   isSearching
                     ? _(msg`No search results found for "${search}".`)
                     : _(
-                        msg`No featured GIFs found. There may be an issue with Tenor.`,
+                        msg`No featured GIFs found. There may be an issue with Giphy.`,
                       )
                 }
               />
@@ -226,7 +304,7 @@ function GifList({
         stickyHeaderIndices={[0]}
         onEndReached={onEndReached}
         onEndReachedThreshold={4}
-        keyExtractor={(item: Gif) => item.id}
+        keyExtractor={(item: GiphyGif) => item.id}
         keyboardDismissMode="on-drag"
         ListFooterComponent={
           hasData ? (
@@ -275,10 +353,12 @@ function DialogError({details}: {details?: string}) {
 
 export function GifPreview({
   gif,
+  loading,
   onSelectGif,
 }: {
-  gif: Gif
-  onSelectGif: (gif: Gif) => void
+  gif: GiphyGif
+  loading?: boolean
+  onSelectGif: (gif: GiphyGif) => void
 }) {
   const ax = useAnalytics()
   const {gtTablet} = useBreakpoints()
@@ -294,26 +374,38 @@ export function GifPreview({
     <Button
       label={_(msg`Select GIF "${gif.title}"`)}
       style={[a.flex_1, gtTablet ? {maxWidth: '33%'} : {maxWidth: '50%'}]}
-      onPress={onPress}>
+      onPress={onPress}
+      disabled={loading}>
       {({pressed}) => (
-        <Image
+        <View
           style={[
             a.flex_1,
             a.mb_sm,
             a.rounded_sm,
             a.aspect_square,
-            {opacity: pressed ? 0.8 : 1},
+            a.overflow_hidden,
+            a.justify_center,
+            a.align_center,
+            {opacity: pressed || loading ? 0.6 : 1},
             t.atoms.bg_contrast_25,
-          ]}
-          source={{
-            uri: tenorUrlToBskyGifUrl(gif.media_formats.tinygif.url),
-          }}
-          contentFit="cover"
-          accessibilityLabel={gif.title}
-          accessibilityHint=""
-          cachePolicy="none"
-          accessibilityIgnoresInvertColors
-        />
+          ]}>
+          <Image
+            style={[a.flex_1, a.w_full]}
+            source={{uri: gif.previewUrl}}
+            contentFit="cover"
+            accessibilityLabel={gif.title}
+            accessibilityHint=""
+            autoplay={true}
+            cachePolicy="none"
+            accessibilityIgnoresInvertColors
+          />
+          {loading ? (
+            <View
+              style={[a.absolute, a.inset_0, a.justify_center, a.align_center]}>
+              <Loader size="lg" />
+            </View>
+          ) : null}
+        </View>
       )}
     </Button>
   )

@@ -321,7 +321,7 @@ function DraftMediaPreview({post}: {post: DraftPostDisplay}) {
   }, [post.images, post.video])
 
   // Nothing to show
-  if (loadedImages.length === 0 && !post.gif && !post.video) {
+  if (loadedImages.length === 0 && !post.video) {
     return null
   }
 
@@ -330,9 +330,6 @@ function DraftMediaPreview({post}: {post: DraftPostDisplay}) {
       {loadedImages.map((image, i) => (
         <MediaPreview.ImageItem key={i} thumbnail={image.url} alt={image.alt} />
       ))}
-      {post.gif && (
-        <MediaPreview.GifItem thumbnail={post.gif.url} alt={post.gif.alt} />
-      )}
       {post.video && videoThumbnail && (
         <MediaPreview.VideoItem
           thumbnail={IS_WEB ? undefined : videoThumbnail}

@@ -80,7 +80,7 @@ export function IS_PROD_SERVICE(url?: string) {
   return url && url !== STAGING_SERVICE && !url.startsWith(LOCAL_DEV_SERVICE)
 }
 
-export const PROD_DEFAULT_FEED = (rkey: string) =>
+export const PROD_DEFAULT_FEED = (_rkey: string) =>
   `at://did:web:board.hukoubook.com/app.bsky.feed.generator/china-good-voice`
 
 export const STAGING_DEFAULT_FEED = (rkey: string) =>
@@ -105,7 +105,8 @@ export const POST_IMG_MAX = {
 export const STAGING_LINK_META_PROXY =
   'https://cardyb.staging.bsky.dev/v1/extract?url='
 
-export const PROD_LINK_META_PROXY = 'https://fatesky-cdn.hukoubook.com/v1/extract?url='
+export const PROD_LINK_META_PROXY =
+  'https://fatesky-cdn.hukoubook.com/v1/extract?url='
 
 export function LINK_META_PROXY(serviceUrl: string) {
   if (IS_PROD_SERVICE(serviceUrl)) {
@@ -171,12 +172,20 @@ export const KNOWN_SHUTDOWN_FEEDS = [
   'at://did:plc:wqowuobffl66jv3kpsvo7ak4/app.bsky.feed.generator/the-algorithm', // for you by skygaze
 ]
 
-export const GIF_SERVICE = 'https://fatesky-cdn.hukoubook.com'
+/**
+ * Giphy goes through our own proxy so that the Giphy API key is never shipped
+ * in the client bundle. The proxy mirrors the Giphy v1 API paths but the paths
+ * are normalised to plural form (`/search`, `/trending`) rather than Giphy's
+ * `/{q}` + `/trending` split, so the server side only has to append the key.
+ *
+ * The client makes the following requests against the proxy:
+ * - `GET {GIF_SERVICE}/v1/gifs/search?q=...&offset=...&limit=...`
+ * - `GET {GIF_SERVICE}/v1/gifs/trending?offset=...&limit=...`
+ */
+export const GIF_SERVICE = 'https://fatesky-cdn.hukoubook.com/giphy'
 
-export const GIF_SEARCH = (params: string) =>
-  `${GIF_SERVICE}/tenor/v2/search?${params}`
-export const GIF_FEATURED = (params: string) =>
-  `${GIF_SERVICE}/tenor/v2/featured?${params}`
+export const GIF_SEARCH = `${GIF_SERVICE}/v1/gifs/search`
+export const GIF_TRENDING = `${GIF_SERVICE}/v1/gifs/trending`
 
 export const MAX_LABELERS = 20
 
@@ -246,10 +255,10 @@ export const FATESKY_SUPPORT_XRPC_LXM = [
   'app.bsky.feed.getFeed',
   'app.bsky.feed.getTimeline',
   'app.bsky.graph.getLists',
-  "app.bsky.graph.getList",
-  "app.bsky.feed.getListFeed",
-  "app.bsky.actor.getProfiles",
-  "app.bsky.feed.getPostThread",
+  'app.bsky.graph.getList',
+  'app.bsky.feed.getListFeed',
+  'app.bsky.actor.getProfiles',
+  'app.bsky.feed.getPostThread',
   'app.bsky.feed.getLikes',
   'app.bsky.feed.getRepostedBy',
   'app.bsky.feed.getQuotes',
@@ -290,20 +299,32 @@ export function useFateskyAppview(...args) {
   if (url.pathname.startsWith('/xrpc/')) {
     const lxm = url.pathname.slice('/xrpc/'.length)
     if (FATESKY_SUPPORT_XRPC_LXM.includes(lxm)) {
-      req.headers.set('atproto-proxy', 'did:web:fatesky.hukoubook.com#fatesky_appview')
+      req.headers.set(
+        'atproto-proxy',
+        'did:web:fatesky.hukoubook.com#fatesky_appview',
+      )
 
       // use fake(discover) feed param for logined user
       // because PDS will leak feed param to bsky appView
       if (lxm === 'app.bsky.feed.getFeed' && req.headers.get('authorization')) {
         url.searchParams.set('xfeed', url.searchParams.get('feed') as string)
-        url.searchParams.set('feed', 'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot')
+        url.searchParams.set(
+          'feed',
+          'at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.generator/whats-hot',
+        )
         req = new globalThis.Request(url, req)
       }
 
       // if feed can't load in pds 40s requirements
       // you can hack the limit param by set it in page search param
-      if (HACK_FATESKY_SEARCH_PARAM_LIMIT.includes(lxm) && pageUrl.searchParams.get('limit')) {
-        url.searchParams.set('limit', pageUrl.searchParams.get('limit') as string)
+      if (
+        HACK_FATESKY_SEARCH_PARAM_LIMIT.includes(lxm) &&
+        pageUrl.searchParams.get('limit')
+      ) {
+        url.searchParams.set(
+          'limit',
+          pageUrl.searchParams.get('limit') as string,
+        )
         req = new globalThis.Request(url, req)
       }
     }
@@ -312,7 +333,7 @@ export function useFateskyAppview(...args) {
 }
 
 export const BLUESKY_SERVICE_HEADERS = {
-  'atproto-proxy': BLUESKY_PROXY_HEADER
+  'atproto-proxy': BLUESKY_PROXY_HEADER,
 }
 
 export const DM_SERVICE_HEADERS = {

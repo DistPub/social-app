@@ -2,6 +2,7 @@ import {
   cacheDirectory,
   copyAsync,
   deleteAsync,
+  getInfoAsync,
   makeDirectoryAsync,
   moveAsync,
 } from 'expo-file-system/legacy'
@@ -52,8 +53,7 @@ type ComposerImageWithTransformation = ComposerImageBase & {
 }
 
 export type ComposerImage =
-  | ComposerImageWithoutTransformation
-  | ComposerImageWithTransformation
+  ComposerImageWithoutTransformation | ComposerImageWithTransformation
 
 let _imageCacheDirectory: string
 
@@ -203,6 +203,21 @@ export function resetImageManipulation(
 export async function compressImage(img: ComposerImage): Promise<PickerImage> {
   const source = img.transformed || img.source
 
+  // Animated WebP (from the GIF picker) must be uploaded as-is: re-encoding
+  // through the image manipulator would strip the animation.
+  if (source.mime === 'image/webp') {
+    const size = await getSourceSize(source.path)
+    if (size !== null && size <= POST_IMG_MAX.size) {
+      return {
+        path: source.path,
+        width: source.width,
+        height: source.height,
+        mime: source.mime,
+        size,
+      }
+    }
+  }
+
   const [w, h] = containImageRes(source.width, source.height, POST_IMG_MAX)
 
   let minQualityPercentage = 0
@@ -260,6 +275,22 @@ async function moveIfNecessary(from: string) {
   }
 
   return from
+}
+
+/**
+ * Best-effort size lookup for a source path. Returns null when the size cannot
+ * be determined (caller should then fall through to the compression path).
+ */
+async function getSourceSize(path: string): Promise<number | null> {
+  if (path.startsWith('data:')) {
+    return getDataUriSize(path)
+  }
+  if (IS_NATIVE && (path.startsWith('file:') || path.startsWith('/'))) {
+    const normalized = path.startsWith('file:') ? path : `file://${path}`
+    const info = await getInfoAsync(normalized)
+    return info.exists && info.size !== undefined ? info.size : null
+  }
+  return null
 }
 
 /**

@@ -2,11 +2,7 @@ import {useMemo} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 
 import {cleanError} from '#/lib/strings/errors'
-import {
-  useResolveGifQuery,
-  useResolveLinkQuery,
-} from '#/state/queries/resolve-link'
-import {type Gif} from '#/state/queries/tenor'
+import {useResolveLinkQuery} from '#/state/queries/resolve-link'
 import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn'
 import {atoms as a, useTheme} from '#/alf'
 import {Loader} from '#/components/Loader'
@@ -15,62 +11,6 @@ import {ModeratedFeedEmbed} from '#/components/Post/Embed/FeedEmbed'
 import {ModeratedListEmbed} from '#/components/Post/Embed/ListEmbed'
 import {Embed as StarterPackEmbed} from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
-
-export const ExternalEmbedGif = ({
-  onRemove,
-  gif,
-}: {
-  onRemove: () => void
-  gif: Gif
-}) => {
-  const t = useTheme()
-  const {data, error} = useResolveGifQuery(gif)
-  const linkInfo = useMemo(
-    () =>
-      data && {
-        title: data.title ?? data.uri,
-        uri: data.uri,
-        description: data.description ?? '',
-        thumb: data.thumb?.source.path,
-      },
-    [data],
-  )
-
-  const loadingStyle: ViewStyle = {
-    aspectRatio: (() => {
-      const dims = gif.media_formats.gif?.dims
-      if (dims && dims[0] > 0 && dims[1] > 0) {
-        return dims[0] / dims[1]
-      }
-      return 16 / 9 // Default aspect ratio
-    })(),
-    width: '100%',
-  }
-
-  return (
-    <View style={[a.overflow_hidden, t.atoms.border_contrast_medium]}>
-      {linkInfo ? (
-        <View style={{pointerEvents: 'auto'}}>
-          <ExternalEmbed link={linkInfo} hideAlt />
-        </View>
-      ) : error ? (
-        <Container style={[a.align_start, a.p_md, a.gap_xs]}>
-          <Text numberOfLines={1} style={t.atoms.text_contrast_high}>
-            {gif.url}
-          </Text>
-          <Text numberOfLines={2} style={[{color: t.palette.negative_400}]}>
-            {cleanError(error)}
-          </Text>
-        </Container>
-      ) : (
-        <Container style={loadingStyle}>
-          <Loader size="xl" />
-        </Container>
-      )}
-      <ExternalEmbedRemoveBtn onRemove={onRemove} />
-    </View>
-  )
-}
 
 export const ExternalEmbedLink = ({
   uri,
@@ -94,7 +34,6 @@ export const ExternalEmbedLink = ({
               description: data.description,
               thumb: data.thumb?.source.path,
             }}
-            hideAlt
           />
         )
       } else if (data.kind === 'feed') {

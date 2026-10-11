@@ -18,7 +18,6 @@ import {
 } from '#/lib/strings/url-helpers'
 import {type ComposerImage, createInitialImages} from '#/state/gallery'
 import {createPostgateRecord} from '#/state/queries/postgate/util'
-import {type Gif} from '#/state/queries/tenor'
 import {threadgateRecordToAllowUISetting} from '#/state/queries/threadgate'
 import {type ThreadgateAllowUISetting} from '#/state/queries/threadgate'
 import {type ComposerOpts} from '#/state/shell/composer'
@@ -43,12 +42,6 @@ type VideoMedia = {
   video: VideoState
 }
 
-type GifMedia = {
-  type: 'gif'
-  gif: Gif
-  alt: string
-}
-
 type Link = {
   type: 'link'
   uri: string
@@ -57,9 +50,9 @@ type Link = {
 // This structure doesn't exactly correspond to the data model.
 // Instead, it maps to how the UI is organized, and how we present a post.
 export type EmbedDraft = {
-  // We'll always submit quote and actual media (images, video, gifs) chosen by the user.
+  // We'll always submit quote and actual media (images, video) chosen by the user.
   quote: Link | undefined
-  media: ImagesMedia | VideoMedia | GifMedia | undefined
+  media: ImagesMedia | VideoMedia | undefined
   // This field may end up ignored if we have more important things to display than a link card:
   link: Link | undefined
 }
@@ -88,9 +81,6 @@ export type PostAction =
   | {type: 'embed_add_uri'; uri: string}
   | {type: 'embed_remove_quote'}
   | {type: 'embed_remove_link'}
-  | {type: 'embed_add_gif'; gif: Gif}
-  | {type: 'embed_update_gif'; alt: string}
-  | {type: 'embed_remove_gif'}
 
 export type ThreadDraft = {
   posts: PostDraft[]
@@ -146,8 +136,7 @@ export type ComposerAction =
   | {
       type: 'clear'
       initInteractionSettings:
-        | AppBskyActorDefs.PostInteractionSettingsPref
-        | undefined
+        AppBskyActorDefs.PostInteractionSettingsPref | undefined
     }
   | {
       type: 'mark_saved'
@@ -514,55 +503,6 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
         },
       }
     }
-    case 'embed_add_gif': {
-      const prevMedia = state.embed.media
-      let nextMedia = prevMedia
-      if (!prevMedia) {
-        nextMedia = {
-          type: 'gif',
-          gif: action.gif,
-          alt: '',
-        }
-      }
-      return {
-        ...state,
-        embed: {
-          ...state.embed,
-          media: nextMedia,
-        },
-      }
-    }
-    case 'embed_update_gif': {
-      const prevMedia = state.embed.media
-      let nextMedia = prevMedia
-      if (prevMedia?.type === 'gif') {
-        nextMedia = {
-          ...prevMedia,
-          alt: action.alt,
-        }
-      }
-      return {
-        ...state,
-        embed: {
-          ...state.embed,
-          media: nextMedia,
-        },
-      }
-    }
-    case 'embed_remove_gif': {
-      const prevMedia = state.embed.media
-      let nextMedia = prevMedia
-      if (prevMedia?.type === 'gif') {
-        nextMedia = undefined
-      }
-      return {
-        ...state,
-        embed: {
-          ...state.embed,
-          media: nextMedia,
-        },
-      }
-    }
   }
 }
 
@@ -578,8 +518,7 @@ export function createComposerState({
   initImageUris: ComposerOpts['imageUris']
   initQuoteUri: string | undefined
   initInteractionSettings:
-    | AppBskyActorDefs.PostInteractionSettingsPref
-    | undefined
+    AppBskyActorDefs.PostInteractionSettingsPref | undefined
 }): ComposerState {
   let media: ImagesMedia | undefined
   if (initImageUris?.length) {

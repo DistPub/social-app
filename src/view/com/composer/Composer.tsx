@@ -94,19 +94,14 @@ import {
 } from '#/state/preferences/languages'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
-import {type Gif} from '#/state/queries/tenor'
 import {useAgent, useSession} from '#/state/session'
 import {useComposerControls} from '#/state/shell/composer'
 import {type ComposerOpts, type OnPostSuccessData} from '#/state/shell/composer'
 import {CharProgress} from '#/view/com/composer/char-progress/CharProgress'
 import {ComposerReplyTo} from '#/view/com/composer/ComposerReplyTo'
 import {DraftsButton} from '#/view/com/composer/drafts/DraftsButton'
-import {
-  ExternalEmbedGif,
-  ExternalEmbedLink,
-} from '#/view/com/composer/ExternalEmbed'
+import {ExternalEmbedLink} from '#/view/com/composer/ExternalEmbed'
 import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn'
-import {GifAltTextDialog} from '#/view/com/composer/GifAltText'
 import {LabelsBtn} from '#/view/com/composer/labels/LabelsBtn'
 import {Gallery} from '#/view/com/composer/photos/Gallery'
 import {OpenCameraBtn} from '#/view/com/composer/photos/OpenCameraBtn'
@@ -123,6 +118,7 @@ import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {atoms as a, native, useTheme, web} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {type SelectedGif} from '#/components/dialogs/GifSelect'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
 import {EmojiArc_Stroke2_Corner0_Rounded as EmojiSmileIcon} from '#/components/icons/Emoji'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
@@ -530,7 +526,6 @@ export const ComposePost = ({
         hasText: draftPosts.some(p => p.text.trim().length > 0),
         hasImages: draftPosts.some(p => p.images && p.images.length > 0),
         hasVideo: draftPosts.some(p => !!p.video),
-        hasGif: draftPosts.some(p => !!p.gif),
         postCount: draftPosts.length,
       })
 
@@ -597,7 +592,6 @@ export const ComposePost = ({
         hasText: posts.some(p => p.richtext.text.trim().length > 0),
         hasImages: posts.some(p => p.embed.media?.type === 'images'),
         hasVideo: posts.some(p => p.embed.media?.type === 'video'),
-        hasGif: posts.some(p => p.embed.media?.type === 'gif'),
         hasQuote: posts.some(p => !!p.embed.quote),
         hasLink: posts.some(p => !!p.embed.link),
         postCount: posts.length,
@@ -757,7 +751,7 @@ export const ComposePost = ({
     }
   }, [onPressCancel, closeAllDialogs, closeAllModals])
 
-  const missingAltError = useMemo(() => {
+  const missingAltError = (() => {
     if (!requireAltTextEnabled) {
       return
     }
@@ -766,9 +760,6 @@ export const ComposePost = ({
       if (media) {
         if (media.type === 'images' && media.images.some(img => !img.alt)) {
           return _(msg`One or more images is missing alt text.`)
-        }
-        if (media.type === 'gif' && !media.alt) {
-          return _(msg`One or more GIFs is missing alt text.`)
         }
         if (
           media.type === 'video' &&
@@ -779,7 +770,7 @@ export const ComposePost = ({
         }
       }
     }
-  }, [thread, requireAltTextEnabled, _])
+  })()
 
   const canPost =
     !missingAltError &&
@@ -1647,22 +1638,6 @@ function ComposerEmbeds({
         <Gallery images={embed.media.images} dispatch={dispatch} />
       )}
 
-      {embed.media?.type === 'gif' && (
-        <View style={[a.relative, a.mt_lg]} key={embed.media.gif.url}>
-          <ExternalEmbedGif
-            gif={embed.media.gif}
-            onRemove={() => dispatch({type: 'embed_remove_gif'})}
-          />
-          <GifAltTextDialog
-            gif={embed.media.gif}
-            altText={embed.media.alt ?? ''}
-            onSubmit={(altText: string) => {
-              dispatch({type: 'embed_update_gif', alt: altText})
-            }}
-          />
-        </View>
-      )}
-
       {!embed.media && embed.link && (
         <View style={[a.relative, a.mt_lg]} key={embed.link.uri}>
           <ExternalEmbedLink
@@ -1870,8 +1845,27 @@ function ComposerFooter({
   )
 
   const onSelectGif = useCallback(
-    (gif: Gif) => {
-      dispatch({type: 'embed_add_gif', gif})
+    async (gif: SelectedGif) => {
+      // Convert the downloaded WebP into a ComposerImage and add it like a
+      // regular post image. On web, createComposerImage copies the blob URL
+      // into a data URI so it survives after the object URL is revoked.
+      const url = URL.createObjectURL(gif.blob)
+      try {
+        const image = await createComposerImage({
+          path: url,
+          width: gif.width,
+          height: gif.height,
+          mime: gif.mime,
+        })
+        dispatch({
+          type: 'embed_add_images',
+          images: [image],
+        })
+      } catch (e) {
+        logger.error(`Failed to add GIF image`, {safeMessage: e.message})
+      } finally {
+        URL.revokeObjectURL(url)
+      }
     },
     [dispatch],
   )
@@ -1953,7 +1947,7 @@ function ComposerFooter({
                 disabled={media?.type === 'images' ? isMaxImages : !!media}
                 onAdd={onImageAdd}
               />
-              <SelectGifBtn onSelectGif={onSelectGif} disabled={!!media} />
+              <SelectGifBtn onSelectGif={onSelectGif} disabled={isMaxImages} />
               {!isMobile ? (
                 <Button
                   onPress={onEmojiButtonPress}

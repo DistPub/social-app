@@ -97,7 +97,6 @@ const schema = z.object({
   externalEmbeds: z
     .object({
       giphy: z.enum(externalEmbedOptions).optional(),
-      tenor: z.enum(externalEmbedOptions).optional(),
       youtube: z.enum(externalEmbedOptions).optional(),
       youtubeShorts: z.enum(externalEmbedOptions).optional(),
       twitch: z.enum(externalEmbedOptions).optional(),

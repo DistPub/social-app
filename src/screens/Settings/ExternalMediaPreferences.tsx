@@ -53,19 +53,16 @@ export function ExternalMediaPreferencesScreen({}: Props) {
             </SettingsList.ItemText>
             <View style={[a.mt_sm, a.w_full]}>
               {native(<SettingsList.Divider style={[a.my_0]} />)}
-              {Object.entries(externalEmbedLabels)
-                // TODO: Remove special case when we disable the old integration.
-                .filter(([key]) => key !== 'tenor')
-                .map(([key, label]) => (
-                  <Fragment key={key}>
-                    <PrefSelector
-                      source={key as EmbedPlayerSource}
-                      label={label}
-                      key={key}
-                    />
-                    {native(<SettingsList.Divider style={[a.my_0]} />)}
-                  </Fragment>
-                ))}
+              {Object.entries(externalEmbedLabels).map(([key, label]) => (
+                <Fragment key={key}>
+                  <PrefSelector
+                    source={key as EmbedPlayerSource}
+                    label={label}
+                    key={key}
+                  />
+                  {native(<SettingsList.Divider style={[a.my_0]} />)}
+                </Fragment>
+              ))}
             </View>
           </SettingsList.Group>
         </SettingsList.Container>

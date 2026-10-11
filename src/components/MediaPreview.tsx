@@ -3,7 +3,6 @@ import {Image} from 'expo-image'
 import {type AppBskyFeedDefs} from '@atproto/api'
 import {Trans} from '@lingui/macro'
 
-import {isTenorGifUri} from '#/lib/strings/embed-player'
 import {atoms as a, useTheme} from '#/alf'
 import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import {Text} from '#/components/Typography'
@@ -37,16 +36,8 @@ export function Embed({
       </Outer>
     )
   } else if (e.type === 'link') {
-    if (!e.view.external.thumb) return null
-    if (!isTenorGifUri(e.view.external.uri)) return null
-    return (
-      <Outer style={style}>
-        <GifItem
-          thumbnail={e.view.external.thumb}
-          alt={e.view.external.title}
-        />
-      </Outer>
-    )
+    // GIFs are now uploaded as post images; external-link GIF previews are gone.
+    return null
   } else if (e.type === 'video') {
     return (
       <Outer style={style}>

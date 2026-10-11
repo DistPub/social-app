@@ -306,6 +306,37 @@ expo export:web && node ./scripts/post-web-build.js && node ./scripts/generate-s
 - **不要**在 webpack 里加 SW 插件（保持构建可预测、单 `sw.js` 输出）；要调缓存策略只改 `scripts/generate-sw.mjs`
 
 
+### GIF（Giphy，Web only）
+
+Web 端 GIF 已从旧 **Tenor + 自建 CDN** 方案完整重写为 **Giphy** 方案。**没有 tenor 逻辑了**——搜索、选择、上传、渲染全部走新的 Giphy 路径，任何地方看到 tenor 残留都属回归。
+
+**代理（关键）**
+
+- GIF 请求走自建代理 `GIF_SERVICE = https://fatesky-cdn.hukoubook.com/giphy`，**客户端不带 API key**（key 由代理层追加）。常量在 `src/lib/constants.ts`：`GIF_SERVICE` / `GIF_SEARCH`(`/v1/gifs/search`) / `GIF_TRENDING`(`/v1/gifs/trending`)
+- 客户端请求：`{GIF_SERVICE}/v1/gifs/search?q=&offset=&limit=` 与 `{GIF_SERVICE}/v1/gifs/trending?offset=&limit=`
+- 代理返回 **Giphy 原始响应**（只注入 key，不重写 rendition）
+
+**数据与「只展示 webp」的取法（`src/state/queries/giphy.ts` 单一事实来源）**
+
+- Giphy 原始响应里 `original`/`fixed_*` 都是 `.gif`；唯一官方 webp 是 `preview_webp`（约 200px 小图）
+- **全质量动画 webp 靠命名约定**：把 `original.url` 的 `giphy.gif` 换成 `giphy.webp` 即得源尺寸动画 webp（实测 480×478 / ~335KB）。`?w=`/`?h=` 参数**无效**；`giphy-downsized.webp` **403 不可用**
+- 归一化：`webpUrl = original.url.replace(/\.gif$/, '.webp')`（上传源），`previewUrl = preview_webp.url`（网格缩略图）
+- **Bluesky 图片 blob 上限 1MB**（`app.bsky.embed.images#image` 是 `accept=image/*`，**webp 合法**）。若全质量 webp > 1MB，回退 `preview_webp`（仍是动画，不丢帧，**不要**用 canvas 降级——会丢动画）
+
+**上传即普通图片（不是 external embed）**
+
+- 选中 GIF → `GifSelect.tsx` 的 `fetchGifWebp()` 下载 webp blob → 回调 `SelectedGif {blob, previewUri, width, height, mime:'image/webp', alt}`
+- `Composer.tsx` 的 `onSelectGif`：`createComposerImage({path: URL.createObjectURL(blob), mime:'image/webp'})` → `dispatch({type:'embed_add_images', images:[image]})`。GIF 与照片**同一 images 数组**、共享 4 张上限（`SelectGifBtn disabled={isMaxImages}`）
+- `src/state/gallery.ts` 的 `compressImage`：`mime === 'image/webp'` 时**原样返回、不重编码**（`expo-image-manipulator` 会把动画压成静态帧）；尺寸判定用 `getSourceSize()`（内部用 `getInfoAsync`，**不是** `getInfo`）
+- 发布走 `app.bsky.embed.images`（`src/lib/api/index.ts` 的 `resolveMedia` images 分支），**已删除**旧的 gif → `app.bsky.embed.external` 分支
+
+**已删除（不要再引回）**
+
+- `src/state/queries/tenor.ts`、`src/state/queries/giphy.ts` 之外的 gif query；`src/lib/gif-alt-text.ts`；`src/view/com/composer/GifAltText.tsx`；`src/components/Post/Embed/ExternalEmbed/Gif.tsx`
+- `embed-player.ts` 的 `parseTenorGif` / `isTenorGifUri` / `tenor` source / `tenor_gif`；`ExternalEmbed/index.tsx` 的 tenor 分支；`MediaPreview.tsx` 的 `isTenorGifUri` 分支
+- `composer.ts` 的 `GifMedia` 与 `embed_add_gif`/`embed_update_gif`/`embed_remove_gif`；草稿的 `serializeGif`/`parseGifFromUrl`/`GifDisplay`；`externalEmbeds.tenor` 偏好；analytics 的 `hasGif`
+
+
 ## 代码规范速查
 
 - **Import 排序**：`simple-import-sort` 分组（React/RN → expo → `#/`）
@@ -323,5 +354,7 @@ expo export:web && node ./scripts/post-web-build.js && node ./scripts/generate-s
 5. **i18n**：新增字符串立即用 `msg()` 包裹，别等 CI 报错
 6. **Sentry**：本地开发可留空 `SENTRY_AUTH_TOKEN`，不影响运行
 7. **Web 私信 = DME 嵌入**：`/messages` 在 web 上是 DME 的 iframe，不是 bsky 私信列表。动 web 私信前先读 `src/lib/dme-embed/constants.ts`（协议单一事实来源），并遵守「DME 嵌入聊天（web 私信）」的集成边界（`ChatList.tsx`/`BottomBar.tsx`/`src/state/session/*`/`list-conversations.tsx` 不动）
+8. **GIF 已换成 Giphy**：`GIF_SERVICE` 是代理（客户端不带 key），webp 靠 `giphy.gif`→`giphy.webp` 命名约定拿全质量图，上传时**不能重编码 webp**（会丢动画），上限 1MB 超限回退 `preview_webp`。详见「GIF（Giphy，Web only）」
+9. **改了 `.po` 要手动重编译**：`bun run intl:compile-if-needed` 在 `messages.js` 已存在时**会跳过**，改了 `.po` 后需 `rm src/locale/locales/en/messages.js && bun run intl:compile` 才会生效
 8. **DME iframe 挂在 shell 层、唯一实例**：挂载在 `src/view/shell/index.web.tsx`（navigator 之外），路由切换只用 `display` 切换、**不要卸载**，**不要**把它放进 react-navigation 的 screen（会被卸载）。`position: 'fixed'` 在 `.tsx` 里过不了 RN 类型，web 专用 fixed 用 ALF 的 `a.fixed`（web 上是 fixed，native 上是 absolute）
 9. **视频播放器 iOS 16 原生 HLS 降级**：`VideoEmbedInnerWeb.tsx` 的 `useHLS` hook 在 `Hls.isSupported()` 返回 `false` 时（iPhone Safari ≤ iOS 16 无 MSE），降级到 Safari 原生 HLS（`video.src = playlist`），而非直接抛错。判断顺序：① `Hls.isSupported()` → hls.js（MSE）② `video.canPlayType('application/vnd.apple.mpegurl')` → 原生 HLS ③ 都不支持 → `throw HLSUnsupportedError`。原生分支下 `hlsRef` 保持 `undefined`，`Controls` 中所有 `hlsRef.current` 访问已有守卫。卸载清理用 `removeAttribute('src') + load()`
