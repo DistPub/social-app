@@ -51,22 +51,22 @@ export function VideoEmbedInnerWeb({
     }
   }, [lastKnownTime])
 
-  const [shown, setShown] = useState(false);
+  const [shown, setShown] = useState(false)
   useEffect(() => {
-    const node = containerRef.current;
+    const node = containerRef.current
     if (!(node instanceof HTMLElement)) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         // 当图片进入或离开视口时自动切换
-        setShown(entry.isIntersecting);
+        setShown(entry.isIntersecting)
       },
-      { threshold: 0.1 } // 露出来 10% 执行
-    );
+      {threshold: 0.1}, // 露出来 10% 执行
+    )
 
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [containerRef]);
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [containerRef])
 
   return (
     <View
@@ -115,7 +115,7 @@ export function VideoEmbedInnerWeb({
 
 export class HLSUnsupportedError extends Error {
   constructor() {
-    super('HLS is not supported')
+    super('HLS is not supported on this device')
   }
 }
 
@@ -203,7 +203,31 @@ function useHLS({
   useEffect(() => {
     if (!videoRef.current) return
     if (!Hls) return
+
+    const video = videoRef.current
+
+    // ------------------------------------------------------------------
+    // iOS Safari ≤ 16 has no MSE (MediaSource), so Hls.isSupported() is
+    // false. But iOS/macOS Safari natively support HLS — we just need to
+    // set the playlist URL as <video src> directly, no hls.js needed.
+    //
+    // Order of checks follows hls.js official recommendation:
+    //   1. Hls.isSupported()  → use hls.js (MSE path)
+    //   2. canPlayType(mpegurl) → use native HLS (Safari path)
+    //   3. neither → throw (truly unsupported)
+    // ------------------------------------------------------------------
     if (!Hls.isSupported()) {
+      if (
+        video.canPlayType('application/vnd.apple.mpegurl') ||
+        video.canPlayType('application/x-mpegURL')
+      ) {
+        video.src = playlist
+        // hlsRef stays undefined — Controls already guards on hlsRef.current
+        return () => {
+          video.removeAttribute('src')
+          video.load()
+        }
+      }
       throw new HLSUnsupportedError()
     }
 
@@ -224,7 +248,7 @@ function useHLS({
       hls.bandwidthEstimate = latestEstimate
     }
 
-    hls.attachMedia(videoRef.current)
+    hls.attachMedia(video)
     hls.loadSource(playlist)
 
     hls.on(Hls.Events.FRAG_LOADED, () => {

@@ -69,7 +69,11 @@ export function VideoEmbed({embed}: {embed: AppBskyEmbedVideo.View}) {
   const [key, setKey] = useState(0)
   const renderError = useCallback(
     (error: unknown) => (
-      <VideoError error={error} retry={() => setKey(key + 1)} thumb={embed.thumbnail} />
+      <VideoError
+        error={error}
+        retry={() => setKey(key + 1)}
+        thumb={embed.thumbnail}
+      />
     ),
     [key],
   )
@@ -222,7 +226,15 @@ export const OnlyNearScreen = ({children}: {children: React.ReactNode}) => {
   return nearScreen ? children : null
 }
 
-function VideoError({ error, retry, thumb }: { error: unknown; retry: () => void; thumb?: string}) {
+function VideoError({
+  error,
+  retry,
+  thumb,
+}: {
+  error: unknown
+  retry: () => void
+  thumb?: string
+}) {
   const {_} = useLingui()
 
   let showRetryButton = true
@@ -233,7 +245,7 @@ function VideoError({ error, retry, thumb }: { error: unknown; retry: () => void
   } else if (error instanceof HLSUnsupportedError) {
     showRetryButton = false
     text = _(
-      msg`Your browser does not support the video format. Please try a different browser.`,
+      msg`This video can't be played on your device. Your browser or system may be missing the required video codecs (H.264/AAC).`,
     )
   } else {
     text = _(msg`An error occurred while loading the video. Please try again.`)
