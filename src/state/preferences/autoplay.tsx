@@ -36,6 +36,18 @@ export function Provider({children}: PropsWithChildren<{}>) {
 
   const [state, setState] = useState<boolean>(() => readAutoplayDisabled(did))
 
+  /*
+   * This provider mounts before the session resolves, so `did` starts out
+   * undefined and the initializer above reads nothing. Re-read whenever the
+   * account resolves or changes. (Render-phase reset per React docs — this
+   * provider sits outside the keyed InnerApp tree, so it never remounts.)
+   */
+  const [prevDid, setPrevDid] = useState(did)
+  if (prevDid !== did) {
+    setPrevDid(did)
+    setState(readAutoplayDisabled(did))
+  }
+
   const setStateWrapped = useCallback(
     (autoplayDisabled: boolean) => {
       setState(autoplayDisabled)
