@@ -9,6 +9,11 @@ import {
   DME_READY_TIMEOUT_MS,
 } from '#/lib/dme-embed/constants'
 import {
+  getDmeBlob,
+  removeDmeBlob,
+  setDmeBlob,
+} from '#/lib/dme-embed/dmeBlobStorage'
+import {
   consumeDmeShare,
   registerDmeShareFlushHandler,
   setDmeShareBridgeReady,
@@ -292,7 +297,7 @@ export function useDmeEmbedBridge(
 
   // Message listener. Registered exactly once; remove on unmount.
   React.useEffect(() => {
-    const handler = (event: MessageEvent) => {
+    const handler = async (event: MessageEvent) => {
       // THREE-CONDITION LOCK — all three must hold or the message is dropped
       // silently. This is what makes it safe to receive tokens-adjacent
       // traffic at all:
@@ -411,6 +416,59 @@ export function useDmeEmbedBridge(
             console.log('[dme-bridge] DME_OPEN_URL received', {url})
           }
           optionsRef.current.onOpenExternalUrl(url)
+          break
+        }
+        case DME_MSG.BLOB_SET: {
+          // DME → fatesky: persist a file's bytes into fatesky's first-party
+          // IndexedDB (scoped per-DID). Fire-and-forget — DME keeps an
+          // in-session memory copy and does not await a confirmation.
+          const token = optionsRef.current.getToken()
+          if (!token?.did) break
+          const p = event.data.payload as {
+            fileId?: unknown
+            value?: unknown
+            mimeType?: unknown
+          } | null
+          if (
+            typeof p?.fileId === 'string' &&
+            typeof p?.value === 'string' &&
+            typeof p?.mimeType === 'string'
+          ) {
+            await setDmeBlob(token.did, p.fileId, p.value, p.mimeType)
+          }
+          break
+        }
+        case DME_MSG.BLOB_GET: {
+          // DME → fatesky: request a file's bytes. Async round-trip: DME hangs
+          // on BLOB_DATA keyed by requestId; echo requestId back unchanged.
+          const token = optionsRef.current.getToken()
+          if (!token?.did) break
+          const p = event.data.payload as {
+            requestId?: unknown
+            fileId?: unknown
+          } | null
+          if (
+            typeof p?.requestId === 'number' &&
+            typeof p?.fileId === 'string'
+          ) {
+            const blob = await getDmeBlob(token.did, p.fileId)
+            sendToDme(DME_MSG.BLOB_DATA, {
+              requestId: p.requestId,
+              value: blob ? blob.value : null,
+              mimeType: blob ? blob.mimeType : '',
+            })
+          }
+          break
+        }
+        case DME_MSG.BLOB_REMOVE: {
+          // DME → fatesky: delete a file's bytes (cleanup). Reserved for when
+          // needed — fatesky owns the eviction policy.
+          const token = optionsRef.current.getToken()
+          if (!token?.did) break
+          const p = event.data.payload as {fileId?: unknown} | null
+          if (typeof p?.fileId === 'string') {
+            await removeDmeBlob(token.did, p.fileId)
+          }
           break
         }
       }
