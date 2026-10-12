@@ -94,6 +94,7 @@ const schema = z.object({
   }),
   requireAltTextEnabled: z.boolean(), // should move to server
   largeAltBadgeEnabled: z.boolean().optional(),
+  /** @deprecated Moved to per-account storage — see `#/storage` `Account.externalEmbeds` (keyed by DID). */
   externalEmbeds: z
     .object({
       giphy: z.enum(externalEmbedOptions).optional(),
@@ -120,6 +121,7 @@ const schema = z.object({
   lastSelectedHomeFeed: z.string().optional(),
   pdsAddressHistory: z.array(z.string()).optional(),
   disableHaptics: z.boolean().optional(),
+  /** @deprecated Moved to per-account storage — see `#/storage` `Account.disableAutoplay` (keyed by DID). */
   disableAutoplay: z.boolean().optional(),
   kawaii: z.boolean().optional(),
   hasCheckedForStarterPack: z.boolean().optional(),

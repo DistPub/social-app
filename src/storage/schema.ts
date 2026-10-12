@@ -1,3 +1,4 @@
+import {type EmbedPlayerSource} from '#/lib/strings/embed-player'
 import {type ID as PolicyUpdate202508} from '#/components/PolicyUpdateOverlay/updates/202508/config'
 import {type Geolocation} from '#/geolocation/types'
 
@@ -79,4 +80,16 @@ export type Account = {
   birthdateLastUpdatedAt?: string
 
   lastSelectedHomeFeed?: string
+
+  /**
+   * Per-account external media player preferences (giphy, klipy, youtube, ...).
+   * Scoped by DID via `account.get/set([did, 'externalEmbeds'])`.
+   */
+  externalEmbeds?: Partial<Record<EmbedPlayerSource, 'show' | 'hide'>>
+
+  /**
+   * Per-account "disable autoplay of external media" preference.
+   * Scoped by DID via `account.get/set([did, 'disableAutoplay'])`.
+   */
+  disableAutoplay?: boolean
 }

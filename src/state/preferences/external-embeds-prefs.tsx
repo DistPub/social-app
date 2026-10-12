@@ -1,46 +1,60 @@
-import React from 'react'
+import {createContext, useCallback, useContext, useState} from 'react'
+import {type PropsWithChildren} from 'react'
 
 import {type EmbedPlayerSource} from '#/lib/strings/embed-player'
 import * as persisted from '#/state/persisted'
+import {useSession} from '#/state/session'
+import {account} from '#/storage'
 
-type StateContext = persisted.Schema['externalEmbeds']
+type ExternalEmbedsValue = Partial<Record<EmbedPlayerSource, 'show' | 'hide'>>
+type StateContext = ExternalEmbedsValue
 type SetContext = (
   source: EmbedPlayerSource,
   value: 'show' | 'hide' | undefined,
 ) => void
 
-const stateContext = React.createContext<StateContext>(
-  persisted.defaults.externalEmbeds,
-)
+const stateContext = createContext<StateContext>({})
 stateContext.displayName = 'ExternalEmbedsPrefsStateContext'
-const setContext = React.createContext<SetContext>({} as SetContext)
+const setContext = createContext<SetContext>({} as SetContext)
 setContext.displayName = 'ExternalEmbedsPrefsSetContext'
 
-export function Provider({children}: React.PropsWithChildren<{}>) {
-  const [state, setState] = React.useState(persisted.get('externalEmbeds'))
+function readExternalEmbeds(did: string | undefined): ExternalEmbedsValue {
+  if (!did) return {}
+  let next = account.get([did, 'externalEmbeds'])
+  if (next === undefined) {
+    // Migrate the old global preference (set before this was scoped per-account).
+    const legacy = persisted.get('externalEmbeds')
+    if (legacy && Object.keys(legacy).length > 0) {
+      account.set([did, 'externalEmbeds'], legacy)
+      next = legacy
+    }
+  }
+  return next ?? {}
+}
 
-  const setStateWrapped = React.useCallback(
+export function Provider({children}: PropsWithChildren<{}>) {
+  const {currentAccount} = useSession()
+  const did = currentAccount?.did
+
+  const [state, setState] = useState<ExternalEmbedsValue>(() =>
+    readExternalEmbeds(did),
+  )
+
+  const setStateWrapped = useCallback(
     (source: EmbedPlayerSource, value: 'show' | 'hide' | undefined) => {
       setState(prev => {
-        persisted.write('externalEmbeds', {
-          ...prev,
-          [source]: value,
-        })
-
-        return {
+        const next: ExternalEmbedsValue = {
           ...prev,
           [source]: value,
         }
+        if (did) {
+          account.set([did, 'externalEmbeds'], next)
+        }
+        return next
       })
     },
-    [setState],
+    [did],
   )
-
-  React.useEffect(() => {
-    return persisted.onUpdate('externalEmbeds', nextExternalEmbeds => {
-      setState(nextExternalEmbeds)
-    })
-  }, [setStateWrapped])
 
   return (
     <stateContext.Provider value={state}>
@@ -52,9 +66,9 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
 }
 
 export function useExternalEmbedsPrefs() {
-  return React.useContext(stateContext)
+  return useContext(stateContext)
 }
 
 export function useSetExternalEmbedPref() {
-  return React.useContext(setContext)
+  return useContext(setContext)
 }

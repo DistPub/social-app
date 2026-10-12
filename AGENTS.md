@@ -110,7 +110,7 @@ src/
 ### 状态管理
 
 - **服务端状态**：TanStack Query，hooks 在 `src/state/queries/*.ts`
-- **UI 偏好**：React Context，在 `src/state/preferences/`
+- **UI 偏好**：React Context，在 `src/state/preferences/`。其中**外部媒体播放器偏好**（`externalEmbeds`，含 giphy/klipy 等全部 11 个源）与**自动播放**（`disableAutoplay`）已改为**按账号隔离**：存于 `#/storage` 的 `account` 实例（`account.get/set([did, key])`，按 `currentAccount.did` 隔离），切号自动切换；旧全局数据在 Provider 首次读取时一次性迁移，全局 `persisted` schema 里这两个字段已标 `@deprecated`（仅保留用于迁移读取）。
 - **认证状态**：`src/state/session/`，用 `useSession()` 和 `useAgent()`
 - Stale time 常量在 `src/state/queries/index.ts`（`STALE.MINUTES.FIVE` 等）
 
