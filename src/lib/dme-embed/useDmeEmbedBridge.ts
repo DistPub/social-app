@@ -92,6 +92,15 @@ export type UseDmeEmbedBridgeResult = {
 let currentTarget: HTMLIFrameElement | null = null
 
 /**
+ * Last-rendered DME iframe DOM node. React nulls `iframeRef.current` BEFORE
+ * any unmount cleanup runs, so the teardown effect cannot read the frame from
+ * the ref while tearing down. This module-level pointer is refreshed on every
+ * render (only while a frame is mounted) and lives long enough for the
+ * teardown effect to force-destroy the frame's browsing context.
+ */
+let lastFrame: HTMLIFrameElement | null = null
+
+/**
  * Send a message to the embedded DME iframe. Module-level on purpose: usable
  * from anywhere (no hook access required). Silently does nothing when no
  * embed is mounted. The `targetOrigin` MUST stay the exact DME origin — never
@@ -486,7 +495,13 @@ export function useDmeEmbedBridge(
   // reconciler replacing the iframe node) is reflected immediately. Cleared on
   // unmount.
   React.useEffect(() => {
-    currentTarget = iframeRef.current
+    const frame = iframeRef.current
+    currentTarget = frame
+    if (frame) {
+      // Remember the most recently mounted frame so the teardown effect can
+      // force-destroy its browsing context after React has nulled the ref.
+      lastFrame = frame
+    }
     if (__DEV__) {
       console.log(
         '[dme-bridge] target synced',
@@ -567,11 +582,34 @@ export function useDmeEmbedBridge(
 
   // Full teardown on unmount: the watchdog outlives the component if load
   // never fired or READY never came.
+  //
+  // Also force-destroys the iframe's browsing context. Removing the DOM node
+  // alone is NOT enough: a cross-origin frame keeps its timers/polling running
+  // until the browser garbage-collects the context, so its API polling keeps
+  // fetching the OLD account's messages (and playing notification sounds) after
+  // a switch. Blanking `src` makes the browser unload the document immediately,
+  // killing its polling loop and audio.
+  //
+  // The setup re-applies the real src so React's StrictMode (dev only) simulated
+  // unmount — which runs this cleanup — does not leave the frame blanked.
   React.useEffect(() => {
+    if (lastFrame) {
+      lastFrame.src = `${DME_EMBED_ORIGIN}/?goto=ChatList`
+    }
     return () => {
       if (readyTimeoutRef.current !== undefined) {
         window.clearTimeout(readyTimeoutRef.current)
         readyTimeoutRef.current = undefined
+      }
+      const frame = lastFrame
+      lastFrame = null
+      if (frame) {
+        try {
+          frame.src = 'about:blank'
+        } catch {
+          // Setting `src` to about:blank is allowed cross-origin; this guard
+          // exists only for exotic environments.
+        }
       }
     }
   }, [])
