@@ -72,6 +72,7 @@ export function DmeEmbed({
     onNavigate,
     onOpenExternalUrl,
   })
+  const {setIframeRef} = bridge
 
   // Notify the consumer once the handshake has completed and the embed is
   // authenticated. This is the right time to push one-way visibility state
@@ -95,7 +96,7 @@ export function DmeEmbed({
     <View style={[a.flex_1, a.overflow_hidden]}>
       {showIframe && (
         <iframe
-          ref={iframeRef}
+          ref={setIframeRef}
           src={`${DME_EMBED_ORIGIN}/?goto=ChatList`}
           onLoad={bridge.onIframeLoad}
           title={_(msg({message: 'DME Chat'}))}

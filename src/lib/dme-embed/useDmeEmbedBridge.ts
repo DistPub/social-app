@@ -77,6 +77,15 @@ export type UseDmeEmbedBridgeOptions = {
 export type UseDmeEmbedBridgeResult = {
   status: DmeEmbedStatus
   onIframeLoad: () => void
+  /**
+   * Stable ref callback for the embed's iframe. Detaching it runs in React's
+   * ref-detach phase, which is BEFORE the iframe node is removed from the DOM.
+   * That is the only moment we can still blank `src` to force the browser to
+   * unload the frame's document (and kill its polling loop + notification
+   * audio). An effect cleanup runs too late — after `removeChild`, when the
+   * node is already detached and the assignment is a no-op.
+   */
+  setIframeRef: (node: HTMLIFrameElement | null) => void
 }
 
 /**
@@ -580,36 +589,47 @@ export function useDmeEmbedBridge(
     }
   }, [status])
 
+  // Stable ref callback for the iframe. The detach branch runs in React's
+  // ref-detach phase, which is BEFORE the node is removed from the DOM — the
+  // only moment we can still blank `src` to force the browser to unload the
+  // frame's document and kill its API-polling loop + notification audio. (An
+  // effect cleanup runs after `removeChild`, when the node is detached and the
+  // assignment is a no-op.) The attach branch re-applies the real src so a
+  // StrictMode (dev-only) simulated remount — which reuses the same DOM node we
+  // may have blanked — reloads the embed instead of staying blank.
+  const setIframeRef = React.useCallback(
+    (node: HTMLIFrameElement | null) => {
+      iframeRef.current = node
+      if (node) {
+        lastFrame = node
+        const realSrc = `${DME_EMBED_ORIGIN}/?goto=ChatList`
+        if (node.src !== realSrc) {
+          node.src = realSrc
+        }
+      } else {
+        const frame = lastFrame
+        lastFrame = null
+        if (frame) {
+          try {
+            frame.src = 'about:blank'
+          } catch {
+            // Setting `src` to about:blank is allowed cross-origin; this guard
+            // exists only for exotic environments.
+          }
+        }
+      }
+    },
+    [iframeRef],
+  )
+
   // Full teardown on unmount: the watchdog outlives the component if load
-  // never fired or READY never came.
-  //
-  // Also force-destroys the iframe's browsing context. Removing the DOM node
-  // alone is NOT enough: a cross-origin frame keeps its timers/polling running
-  // until the browser garbage-collects the context, so its API polling keeps
-  // fetching the OLD account's messages (and playing notification sounds) after
-  // a switch. Blanking `src` makes the browser unload the document immediately,
-  // killing its polling loop and audio.
-  //
-  // The setup re-applies the real src so React's StrictMode (dev only) simulated
-  // unmount — which runs this cleanup — does not leave the frame blanked.
+  // never fired or READY never came. (Browsing-context destruction now lives
+  // in `setIframeRef`'s detach branch, which runs before `removeChild`.)
   React.useEffect(() => {
-    if (lastFrame) {
-      lastFrame.src = `${DME_EMBED_ORIGIN}/?goto=ChatList`
-    }
     return () => {
       if (readyTimeoutRef.current !== undefined) {
         window.clearTimeout(readyTimeoutRef.current)
         readyTimeoutRef.current = undefined
-      }
-      const frame = lastFrame
-      lastFrame = null
-      if (frame) {
-        try {
-          frame.src = 'about:blank'
-        } catch {
-          // Setting `src` to about:blank is allowed cross-origin; this guard
-          // exists only for exotic environments.
-        }
       }
     }
   }, [])
@@ -626,5 +646,5 @@ export function useDmeEmbedBridge(
     }
   }, [])
 
-  return {status, onIframeLoad}
+  return {status, onIframeLoad, setIframeRef}
 }
