@@ -34,6 +34,7 @@ export const DME_MSG = {
   NAVIGATE: 'DME_NAVIGATE', // DME → fatesky: 请求 fatesky SPA 跳转到 path（站内链接）
   OPEN_URL: 'DME_OPEN_URL', // DME → fatesky: 请求拉起网页视图打开外部 url（iOS 外链）
   SHARE: 'DME_SHARE', // fatesky → DME: 把帖子链接交给 DME，由 DME 决定如何转发
+  START_CHAT: 'DME_START_CHAT', // fatesky → DME: 请求打开/创建与某人的聊天 {did, handle?}
   // 二进制文件字节托管（KV 的 STORAGE_* 通道装不下，且 localStorage ~5MB 会反噬消息）
   // 走 fatesky 第一方 IndexedDB（per-DID 隔离），躲过 Safari ITP 对第三方 iframe IndexedDB 的清理
   BLOB_SET: 'DME_BLOB_SET', // DME → fatesky：持久化一个文件的字节 {fileId, value(base64), mimeType}

@@ -38,7 +38,7 @@ import {RichText} from '#/components/RichText'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {VerificationCheckButton} from '#/components/verification/VerificationCheckButton'
-import {IS_IOS} from '#/env'
+import {IS_IOS, IS_WEB} from '#/env'
 import {useActorStatus} from '#/features/liveNow'
 import {GermButton} from '../components/GermButton'
 import {EditProfileDialog} from './EditProfileDialog'
@@ -194,9 +194,7 @@ let ProfileHeaderStandard = ({
             msg`The account will be able to interact with you after unblocking.`,
           )}
           onConfirm={unblockAccount}
-          confirmButtonCta={
-            blocking ? _(msg`Unblock`) : _(msg`Block`)
-          }
+          confirmButtonCta={blocking ? _(msg`Unblock`) : _(msg`Block`)}
           confirmButtonColor="negative"
         />
       </ProfileHeaderShell>
@@ -338,19 +336,22 @@ export function HeaderStandardButtons({
           <EditProfileDialog profile={profile} control={editProfileControl} />
         </>
       ) : blocking ? (
-        profile.viewer?.blockingByList ? null : (
-          <Button
-            testID="unblockBtn"
-            size="small"
-            color="secondary"
-            label={_(msg`Unblock`)}
-            disabled={!hasSession}
-            onPress={() => unblockPromptControl.open()}>
-            <ButtonText>
-              <Trans context="action">Unblock</Trans>
-            </ButtonText>
-          </Button>
-        )
+        <>
+          {profile.viewer?.blockingByList ? null : (
+            <Button
+              testID="unblockBtn"
+              size="small"
+              color="secondary"
+              label={_(msg`Unblock`)}
+              disabled={!hasSession}
+              onPress={() => unblockPromptControl.open()}>
+              <ButtonText>
+                <Trans context="action">Unblock</Trans>
+              </ButtonText>
+            </Button>
+          )}
+          {IS_WEB && hasSession && <MessageProfileButton profile={profile} />}
+        </>
       ) : !profile.viewer?.blockedBy ? (
         <>
           {hasSession && (!minimal || profile.viewer?.following) && (
@@ -393,6 +394,10 @@ export function HeaderStandardButtons({
             </Button>
           )}
         </>
+      ) : IS_WEB && hasSession ? (
+        // Web: the DME chat button stays visible even when the OTHER user has
+        // blocked us — availability is DME's policy, not ours.
+        <MessageProfileButton profile={profile} />
       ) : null}
       <ProfileMenu profile={profile} />
 

@@ -19,6 +19,11 @@ import {
   setDmeShareBridgeReady,
 } from '#/lib/dme-embed/dmeShare'
 import {
+  consumeDmeStartChat,
+  registerDmeStartChatFlushHandler,
+  setDmeStartChatBridgeReady,
+} from '#/lib/dme-embed/dmeStartChat'
+import {
   clearDmeStorage,
   loadDmeStorage,
   removeDmeStorageItem,
@@ -161,6 +166,19 @@ function flushDmeShare() {
 }
 
 /**
+ * Flush any buffered "start chat from a profile" intent to the embed. Owned
+ * by the bridge (it has `sendToDme`); registered with the dmeStartChat store
+ * on mount and invoked (a) when the embed becomes ready and (b) immediately
+ * when an intent is requested while already ready. Sending is a no-op if no
+ * intent is buffered or the frame is not reachable.
+ */
+function flushDmeStartChat() {
+  const pending = consumeDmeStartChat()
+  if (!pending) return
+  sendToDme(DME_MSG.START_CHAT, pending)
+}
+
+/**
  * Validate a `DME_NAVIGATE` `path` before routing fatesky's own SPA to it.
  *
  * The path MUST be a site-relative route — never a protocol-relative
@@ -251,6 +269,9 @@ function deliverToken(
   // is flushed. This runs on BOTH the DME_READY path and the late-token
   // recovery path, so a share requested before auth is never lost.
   setDmeShareBridgeReady(true)
+  // Same for any pending DME_START_CHAT intent (buffered before the handshake
+  // completed): flush it now that the embed is authenticated and listening.
+  setDmeStartChatBridgeReady(true)
   sendToDme(DME_MSG.PING)
   return true
 }
@@ -634,15 +655,19 @@ export function useDmeEmbedBridge(
     }
   }, [])
 
-  // Register the share-flush routine with the dmeShare store while mounted, so
-  // a `requestDmeShare` from anywhere (e.g. the post share menu) can reach the
-  // embed. On unmount, both detach the handler and drop the ready flag so a
+  // Register the share/start-chat flush routines with their module-level
+  // stores while mounted, so a `requestDmeShare` / `requestDmeStartChat` from
+  // anywhere (e.g. the post share menu or the profile header) can reach the
+  // embed. On unmount, detach the handlers and drop the ready flags so a
   // remounted/late frame can never be messaged through a stale closure.
   React.useEffect(() => {
     registerDmeShareFlushHandler(flushDmeShare)
+    registerDmeStartChatFlushHandler(flushDmeStartChat)
     return () => {
       registerDmeShareFlushHandler(null)
       setDmeShareBridgeReady(false)
+      registerDmeStartChatFlushHandler(null)
+      setDmeStartChatBridgeReady(false)
     }
   }, [])
 
