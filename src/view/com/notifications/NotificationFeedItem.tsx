@@ -23,8 +23,8 @@ import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {MAX_POST_LINES} from '#/lib/constants'
-import {DM_SERVICE_HEADERS} from '#/lib/constants'
+import {DM_SERVICE_HEADERS, MAX_POST_LINES} from '#/lib/constants'
+import {requestDmeStartChat} from '#/lib/dme-embed/dmeStartChat'
 import {useAnimatedValue} from '#/lib/hooks/useAnimatedValue'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {makeProfileLink} from '#/lib/routes/links'
@@ -69,6 +69,8 @@ import {SubtleHover} from '#/components/SubtleHover'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
+import {useAnalytics} from '#/analytics'
+import {IS_WEB} from '#/env'
 import * as bsky from '#/types/bsky'
 
 const MAX_AUTHORS = 5
@@ -855,6 +857,7 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
 
 function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
   const {_} = useLingui()
+  const ax = useAnalytics()
   const agent = useAgent()
   const navigation = useNavigation<NavigationProp>()
   const [isLoading, setIsLoading] = useState(false)
@@ -876,11 +879,22 @@ function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
       style={[a.self_center, {marginLeft: 'auto'}]}
       disabled={isLoading}
       onPress={async () => {
+        if (IS_WEB) {
+          // DME is the sole chat system on web — route to /messages (where
+          // the keep-mounted DME iframe lives) and hand over a start-chat
+          // intent instead of hitting bsky's convo API. The bridge buffers
+          // the intent until the embed has handshaked, so this is safe even
+          // before the iframe is authenticated.
+          ax.metric('chat:open', {logContext: 'NotificationFeedItem'})
+          navigation.navigate('Messages')
+          requestDmeStartChat({did: profile.did, handle: profile.handle})
+          return
+        }
         try {
           setIsLoading(true)
           const res = await agent.api.chat.bsky.convo.getConvoForMembers(
             {
-              members: [profile.did, agent.session!.did!],
+              members: [profile.did, agent.session!.did],
             },
             {headers: DM_SERVICE_HEADERS},
           )

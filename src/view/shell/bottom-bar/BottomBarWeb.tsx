@@ -11,7 +11,6 @@ import {getCurrentRoute, isTab} from '#/lib/routes/helpers'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
-import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -58,20 +57,20 @@ export function BottomBarWeb() {
   const {data: profile} = useProfileQuery({did: currentAccount?.did})
   const iconWidth = 26
 
-  const unreadMessageCount = useUnreadMessageCount()
+  // DME is the sole chat system on web — the badge comes exclusively from the
+  // DME embed's unread reports (null = not yet reported, show no badge).
   const {dmeUnread, hasNew: dmeHasNew} = useDmeUnreadCount()
   const notificationCountStr = useUnreadNotifications()
 
   const messageCount =
     dmeUnread === null
-      ? unreadMessageCount.numUnread
+      ? undefined
       : dmeUnread > 10
         ? '10+'
         : dmeUnread > 0
           ? String(dmeUnread)
           : undefined
-  const messageHasNew =
-    dmeUnread === null ? unreadMessageCount.hasNew : dmeHasNew
+  const messageHasNew = dmeUnread === null ? false : dmeHasNew
 
   const showSignIn = React.useCallback(() => {
     closeAllActiveElements()

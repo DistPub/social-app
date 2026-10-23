@@ -20,7 +20,6 @@ import {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'
 import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {emitSoftReset} from '#/state/events'
 import {useFetchHandle} from '#/state/queries/handle'
-import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfilesQuery} from '#/state/queries/profile'
 import {type SessionAccount, useSession, useSessionApi} from '#/state/session'
@@ -589,18 +588,18 @@ function ComposeBtn() {
 function ChatNavItem() {
   const pal = usePalette('default')
   const {_} = useLingui()
-  const numUnreadMessages = useUnreadMessageCount()
-  const {dmeUnread, hasNew: dmeHasNew} = useDmeUnreadCount()
+  // DME is the sole chat system on web — the badge comes exclusively from the
+  // DME embed's unread reports (null = not yet reported, show no badge).
+  const {dmeUnread, hasNew} = useDmeUnreadCount()
 
   const count =
     dmeUnread === null
-      ? numUnreadMessages.numUnread
+      ? undefined
       : dmeUnread > 10
         ? '10+'
         : dmeUnread > 0
           ? String(dmeUnread)
           : undefined
-  const hasNew = dmeUnread === null ? numUnreadMessages.hasNew : dmeHasNew
 
   return (
     <NavItem
