@@ -106,6 +106,7 @@ export function useProfilesQuery({
       return res.data
     },
     placeholderData: maintainData ? keepPreviousData : undefined,
+    enabled: handles.length > 0,
   })
 }
 
@@ -152,8 +153,7 @@ export function useProfileUpdateMutation() {
       checkCommitted,
     }) => {
       let newUserAvatarPromise:
-        | Promise<ComAtprotoRepoUploadBlob.Response>
-        | undefined
+        Promise<ComAtprotoRepoUploadBlob.Response> | undefined
       if (newUserAvatar) {
         newUserAvatarPromise = uploadBlob(
           agent,
@@ -162,8 +162,7 @@ export function useProfileUpdateMutation() {
         )
       }
       let newUserBannerPromise:
-        | Promise<ComAtprotoRepoUploadBlob.Response>
-        | undefined
+        Promise<ComAtprotoRepoUploadBlob.Response> | undefined
       if (newUserBanner) {
         newUserBannerPromise = uploadBlob(
           agent,
@@ -492,8 +491,7 @@ function useProfileUnmuteMutation() {
 export function getProfileBlockingUri(profile: any) {
   const items: any[] = profile.viewer?.xblocking ?? []
   for (const item of items) {
-    if (item.list.endsWith('/block'))
-      return item.uri as string
+    if (item.list.endsWith('/block')) return item.uri as string
   }
 }
 
