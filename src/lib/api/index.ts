@@ -36,6 +36,7 @@ import {
   type PostDraft,
   type ThreadDraft,
 } from '#/view/com/composer/state/composer'
+import {registerRawVideoBlob} from './raw-video-vault'
 import {uploadBlob} from './upload-blob'
 
 export {uploadBlob}
@@ -334,6 +335,18 @@ async function resolveMedia(
     embedDraft.media.video.status === 'done'
   ) {
     const videoDraft = embedDraft.media.video
+
+    // Permanently register the raw blob under its honest mime before the post
+    // record references it (see registerRawVideoBlob docs). The video service
+    // reports the PDS-sniffed mime via `originalMimeType`; fall back to the
+    // picked file's mime if the service didn't send one.
+    onStateChange?.(t`Registering video...`)
+    await registerRawVideoBlob(agent, {
+      blobRef: videoDraft.pendingPublish.blobRef,
+      mimeType:
+        videoDraft.pendingPublish.originalMimeType ?? videoDraft.video.mimeType,
+    })
+
     const captions = await Promise.all(
       videoDraft.captions
         .filter(caption => caption.lang !== '')

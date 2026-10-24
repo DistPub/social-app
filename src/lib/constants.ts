@@ -192,6 +192,17 @@ export const MAX_LABELERS = 20
 export const VIDEO_SERVICE = 'https://fatesky.hukoubook.com'
 export const VIDEO_SERVICE_DID = 'did:web:fatesky.hukoubook.com'
 
+/**
+ * Collection used to permanently register a raw video blob under its honest
+ * (PDS-sniffed) mime type before the post record references the same blob as
+ * `video/mp4`. The PDS only skips its record-vs-storage mime consistency check
+ * (`verifyBlob`) once a blob has been made permanent by a first reference;
+ * this record is that first reference.
+ *
+ * See docs/video-service-mime-rewrite-requirement.md.
+ */
+export const RAW_VIDEO_VAULT_COLLECTION = 'com.hukoubook.fatesky.raw_video'
+
 export const VIDEO_MAX_DURATION_MS = 3 * 60 * 1000 // 3 minutes in milliseconds
 /**
  * Maximum size of a video in megabytes, _not_ mebibytes. Backend uses

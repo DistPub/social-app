@@ -33,6 +33,9 @@ export type VideoAction =
   | {
       type: 'to_done'
       blobRef: BlobRef
+      // Honest (PDS-sniffed) mime returned by our video service, used to
+      // register the blob before posting. See registerRawVideoBlob().
+      originalMimeType?: string
       signal: AbortSignal
     }
   | {type: 'update_progress'; progress: number; signal: AbortSignal}
@@ -126,17 +129,13 @@ type DoneState = {
   asset: ImagePickerAsset
   video: CompressedVideo
   jobId?: undefined
-  pendingPublish: {blobRef: BlobRef}
+  pendingPublish: {blobRef: BlobRef; originalMimeType?: string}
   altText: string
   captions: CaptionsTrack[]
 }
 
 export type VideoState =
-  | ErrorState
-  | CompressingState
-  | UploadingState
-  | ProcessingState
-  | DoneState
+  ErrorState | CompressingState | UploadingState | ProcessingState | DoneState
 
 export function createVideoState(
   asset: ImagePickerAsset,
@@ -237,6 +236,7 @@ export function videoReducer(
         video: state.video,
         pendingPublish: {
           blobRef: action.blobRef,
+          originalMimeType: action.originalMimeType,
         },
         altText: state.altText,
         captions: state.captions,
@@ -365,6 +365,14 @@ export async function processVideo(
       dispatch({
         type: 'to_done',
         blobRef: blob,
+        // Fatesky extension: the video service reports the honest (PDS-sniffed)
+        // mime of the stored blob alongside the (possibly rewritten) blob mime.
+        // Not part of the official lexicon, hence the cast.
+        originalMimeType: (
+          status as
+            | (AppBskyVideoDefs.JobStatus & {originalMimeType?: string})
+            | undefined
+        )?.originalMimeType,
         signal,
       })
     } else {
