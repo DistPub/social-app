@@ -201,7 +201,7 @@ export const VIDEO_SERVICE_DID = 'did:web:fatesky.hukoubook.com'
  *
  * See docs/video-service-mime-rewrite-requirement.md.
  */
-export const RAW_VIDEO_VAULT_COLLECTION = 'com.hukoubook.fatesky.raw_video'
+export const RAW_VIDEO_VAULT_COLLECTION = 'com.hukoubook.fatesky.rawVideo'
 
 export const VIDEO_MAX_DURATION_MS = 3 * 60 * 1000 // 3 minutes in milliseconds
 /**
