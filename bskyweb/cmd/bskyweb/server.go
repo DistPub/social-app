@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"slices"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -18,6 +17,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -84,6 +84,10 @@ func serve(cctx *cli.Context) error {
 		Client: cliutil.NewHttpClient(),
 		Host:   appviewHost,
 	}
+	// Forward the real client IP and User-Agent to the appview on every xrpc
+	// request, so backend analytics see the actual client instead of this SSR
+	// service's own IP and a static Go HTTP client User-Agent.
+	xrpcc.Client.Transport = &clientMetaTransport{base: xrpcc.Client.Transport}
 
 	// httpd
 	var (
@@ -153,6 +157,10 @@ func serve(cctx *cli.Context) error {
 	e.HTTPErrorHandler = server.errorHandler
 
 	e.IPExtractor = echo.ExtractIPFromXFFHeader()
+
+	// Record client IP/UA in the request context (used by clientMetaTransport
+	// when this service makes appview requests on the client's behalf).
+	e.Use(clientMetaMiddleware)
 
 	// SECURITY: Do not modify without due consideration.
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
