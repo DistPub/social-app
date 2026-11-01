@@ -1,5 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
-import {Pressable, StyleSheet, View} from 'react-native'
+import {
+  type GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native'
 import {Image} from 'expo-image'
 import {msg} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
@@ -59,9 +64,24 @@ function LightboxContainer({
   handleBackgroundPress: () => void
 }) {
   const {_} = useLingui()
+  const containerRef = useRef<View>(null)
   FocusGuards.useFocusGuards()
+
+  // Mobile web: kill scroll penetration. `RemoveScrollBar` sets `overflow:
+  // hidden` on the body, but iOS Safari ignores that for touch scrolling, so
+  // vertical swipes on the lightbox would pan the feed behind it and change
+  // its scroll position. `touch-action: none` on the overlay itself makes the
+  // browser drop every scroll gesture that starts here.
+  useEffect(() => {
+    const el = containerRef.current as unknown as HTMLElement | null
+    if (el) {
+      el.style.setProperty('touch-action', 'none')
+    }
+  }, [])
+
   return (
     <Pressable
+      ref={containerRef}
       accessibilityHint={undefined}
       accessibilityLabel={_(msg`Close image viewer`)}
       onPress={handleBackgroundPress}
@@ -111,6 +131,85 @@ function LightboxGallery({
       setIndex(index + 1)
     }
   }, [index, canGoRight])
+
+  // Horizontal swipe navigation for touch devices. Same axis-lock pattern as
+  // `Pager.web.tsx`: once the gesture moves past LOCK_THRESHOLD we commit to a
+  // dominant axis, so a vertical scroll attempt can never flip into a swipe
+  // (and vice versa) mid-gesture.
+  const swipe = useRef({
+    touching: false,
+    startX: 0,
+    startY: 0,
+    lockedAxis: null as 'h' | 'v' | null,
+  })
+  const LOCK_THRESHOLD = 10
+  const SWIPE_THRESHOLD = 48
+  const MAX_ANGLE_DEG = 15
+
+  const readTouch = (e: GestureResponderEvent) => {
+    const nativeEvent = e.nativeEvent as any
+    const touch = nativeEvent?.changedTouches?.[0] ?? nativeEvent?.touches?.[0]
+    return touch ? {x: touch.pageX ?? 0, y: touch.pageY ?? 0} : null
+  }
+
+  const onTouchStart = (e: GestureResponderEvent) => {
+    if (imgs.length < 2) return
+    const point = readTouch(e)
+    if (!point) return
+    swipe.current = {
+      touching: true,
+      startX: point.x,
+      startY: point.y,
+      lockedAxis: null,
+    }
+  }
+
+  const onTouchMove = (e: GestureResponderEvent) => {
+    const state = swipe.current
+    if (!state.touching || state.lockedAxis) return
+    const point = readTouch(e)
+    if (!point) return
+    const dx = point.x - state.startX
+    const dy = point.y - state.startY
+    const absDx = Math.abs(dx)
+    const absDy = Math.abs(dy)
+    if (absDx < LOCK_THRESHOLD && absDy < LOCK_THRESHOLD) return
+
+    if (absDx > 0) {
+      const angle = Math.atan2(absDy, absDx) * (180 / Math.PI)
+      if (angle <= MAX_ANGLE_DEG) {
+        state.lockedAxis = 'h'
+      } else {
+        state.lockedAxis = 'v'
+      }
+    } else {
+      state.lockedAxis = 'v'
+    }
+  }
+
+  const onTouchEnd = (e: GestureResponderEvent) => {
+    const state = swipe.current
+    if (!state.touching || state.lockedAxis !== 'h') {
+      swipe.current.touching = false
+      return
+    }
+    swipe.current.touching = false
+
+    const point = readTouch(e)
+    if (!point) return
+    const dx = point.x - state.startX
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return
+
+    if (dx > 0) {
+      onPressLeft()
+    } else {
+      onPressRight()
+    }
+  }
+
+  const onTouchCancel = () => {
+    swipe.current.touching = false
+  }
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -165,7 +264,12 @@ function LightboxGallery({
   const img = imgs[index]
 
   return (
-    <View style={[a.absolute, a.inset_0]}>
+    <View
+      style={[a.absolute, a.inset_0]}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchCancel}>
       <View style={[a.flex_1, a.justify_center, a.align_center]}>
         <LightboxGalleryItem
           key={index}
