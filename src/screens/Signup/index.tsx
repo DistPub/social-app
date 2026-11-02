@@ -6,7 +6,7 @@ import {AppBskyGraphStarterpack} from '@atproto/api'
 import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
-import {FEEDBACK_FORM_URL} from '#/lib/constants'
+import {useFeedbackDmLink} from '#/lib/dme-embed/feedbackDm'
 import {logger} from '#/logger'
 import {useServiceQuery} from '#/state/queries/service'
 import {useStarterPackQuery} from '#/state/queries/starter-packs'
@@ -43,6 +43,7 @@ export function Signup({onPressBack}: {onPressBack: () => void}) {
   })
   const {gtMobile} = useBreakpoints()
   const submit = useSubmitSignup()
+  const feedbackDmLink = useFeedbackDmLink()
 
   useEffect(() => {
     dispatch({
@@ -230,8 +231,8 @@ export function Signup({onPressBack}: {onPressBack: () => void}) {
                       ]}>
                       <Trans>Having trouble?</Trans>{' '}
                       <InlineLinkText
+                        {...feedbackDmLink}
                         label={_(msg`Contact support`)}
-                        to="/profile/fatesky-social.hukoubook.com"
                         style={[!gtMobile && a.text_md]}>
                         <Trans>Feedback</Trans>
                       </InlineLinkText>

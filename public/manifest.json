@@ -26,5 +26,5 @@
     { "src": "512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" },
     { "src": "1024.png", "type": "image/png", "sizes": "1024x1024" }
   ],
-  "description": "Fatesky是AT网络上Bluesky原生替代实时去中心化社交平台\n💥无任何中间审查（zero ban）\n⚛️http://hukoubook.com\n🔮http://soar.smitechow.com"
+  "description": "Fatesky是AT网络上Bluesky原生替代实时去中心化社交平台\n💥无任何中间审查（zero ban）\n⚛️http://hukoubook.com"
 }

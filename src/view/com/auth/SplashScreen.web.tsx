@@ -4,6 +4,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
 import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 
+import {useFeedbackDmLink} from '#/lib/dme-embed/feedbackDm'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {useKawaiiMode} from '#/state/preferences/kawaii'
 import {ErrorBoundary} from '#/view/com/util/ErrorBoundary'
@@ -151,6 +152,7 @@ export const SplashScreen = ({
 function Footer() {
   const t = useTheme()
   const {_} = useLingui()
+  const feedbackDmLink = useFeedbackDmLink()
 
   return (
     <View
@@ -168,9 +170,7 @@ function Footer() {
         a.flex_1,
         t.atoms.border_contrast_medium,
       ]}>
-      <InlineLinkText
-        to="/profile/fatesky-social.hukoubook.com"
-        label={_(msg`Feedback`)}>
+      <InlineLinkText {...feedbackDmLink} label={_(msg`Feedback`)}>
         {_(msg`Feedback`)}
       </InlineLinkText>
 

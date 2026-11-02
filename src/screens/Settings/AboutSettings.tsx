@@ -1,4 +1,3 @@
-import {useMemo} from 'react'
 import {Platform, View} from 'react-native'
 import {setStringAsync} from 'expo-clipboard'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -8,15 +7,15 @@ import {useLingui} from '@lingui/react'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {useMutation} from '@tanstack/react-query'
 
-import {STATUS_PAGE_URL, FATESKY_SUPPORT_XRPC_LXM} from '#/lib/constants'
+import {FATESKY_SUPPORT_XRPC_LXM} from '#/lib/constants'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import * as Toast from '#/view/com/util/Toast'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
+import {atoms as a} from '#/alf'
+import * as Admonition from '#/components/Admonition'
 import {Atom_Stroke2_Corner0_Rounded as AtomIcon} from '#/components/icons/Atom'
 import {BroomSparkle_Stroke2_Corner2_Rounded as BroomSparkleIcon} from '#/components/icons/BroomSparkle'
 import {CodeLines_Stroke2_Corner2_Rounded as CodeLinesIcon} from '#/components/icons/CodeLines'
-import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
-import {Newspaper_Stroke2_Corner2_Rounded as NewspaperIcon} from '#/components/icons/Newspaper'
 import {Wrench_Stroke2_Corner2_Rounded as WrenchIcon} from '#/components/icons/Wrench'
 import * as Layout from '#/components/Layout'
 import {Loader} from '#/components/Loader'
@@ -26,8 +25,6 @@ import * as env from '#/env'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 import {OTAInfo} from './components/OTAInfo'
-import * as Admonition from '#/components/Admonition'
-import {atoms as a} from '#/alf'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'AboutSettings'>
 export function AboutSettingsScreen({}: Props) {
@@ -80,15 +77,6 @@ export function AboutSettingsScreen({}: Props) {
       </Layout.Header.Outer>
       <Layout.Content>
         <SettingsList.Container>
-          <SettingsList.LinkItem
-            to={"https://soar.smitechow.com"}
-            label={"soar"}>
-            <SettingsList.ItemIcon icon={GlobeIcon} />
-            <SettingsList.ItemText>
-              💥邀请你试用Soar遨游蓝天
-            </SettingsList.ItemText>
-          </SettingsList.LinkItem>
-          <SettingsList.Divider />
           <SettingsList.LinkItem to="/sys/log" label={_(msg`System log`)}>
             <SettingsList.ItemIcon icon={CodeLinesIcon} />
             <SettingsList.ItemText>
@@ -172,11 +160,9 @@ export function AboutSettingsScreen({}: Props) {
               <Admonition.Row>
                 <Admonition.Icon />
                 <View style={[a.flex_1, a.gap_sm]}>
+                  <Admonition.Text>fatesky已支持如下XRPC方法：</Admonition.Text>
                   <Admonition.Text>
-                    fatesky已支持如下XRPC方法：
-                  </Admonition.Text>
-                  <Admonition.Text>
-                    { `${JSON.stringify(FATESKY_SUPPORT_XRPC_LXM, null, '\t')}` }
+                    {`${JSON.stringify(FATESKY_SUPPORT_XRPC_LXM, null, '\t')}`}
                   </Admonition.Text>
                 </View>
               </Admonition.Row>

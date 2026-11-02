@@ -4,7 +4,7 @@ import {msg, Trans} from '@lingui/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/core'
 
-import {FEEDBACK_FORM_URL, HELP_DESK_URL} from '#/lib/constants'
+import {useFeedbackDmLink} from '#/lib/dme-embed/feedbackDm'
 import {useKawaiiMode} from '#/state/preferences/kawaii'
 import {useSession} from '#/state/session'
 import {DesktopFeeds} from '#/view/shell/desktop/Feeds'
@@ -44,7 +44,8 @@ function useWebQueryParams() {
 export function DesktopRightNav({routeName}: {routeName: string}) {
   const t = useTheme()
   const {_} = useLingui()
-  const {hasSession, currentAccount} = useSession()
+  const {hasSession} = useSession()
+  const feedbackDmLink = useFeedbackDmLink()
   const kawaii = useKawaiiMode()
   const gutters = useGutters(['base', 0, 'base', 'wide'])
   const isSearchScreen = routeName === 'Search'
@@ -97,27 +98,18 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
 
       <Text style={[a.leading_snug, t.atoms.text_contrast_low]}>
         {hasSession && (
-          <>
-            <InlineLinkText
-              to="/profile/fatesky-social.hukoubook.com"
-              label={_(msg`Feedback`)}>
-              {_(msg`Feedback`)}
-            </InlineLinkText>
-            <InlineLinkText
-              to="https://soar.smitechow.com"
-              label={_(msg`💥邀请你试用Soar遨游蓝天`)}>
-              {_(msg`💥邀请你试用Soar遨游蓝天`)}
-            </InlineLinkText>
-          </>
+          <InlineLinkText {...feedbackDmLink} label={_(msg`Feedback`)}>
+            {_(msg`Feedback`)}
+          </InlineLinkText>
         )}
       </Text>
 
       <Text style={[a.leading_snug, t.atoms.text_contrast_low]}>
-            <InlineLinkText
-              to="https://lk8fangkuai.github.io/"
-              label={_(msg`@lk8fangkuai.github.io`)}>
-              {_(msg`@lk8fangkuai.github.io`)}
-            </InlineLinkText>
+        <InlineLinkText
+          to="https://lk8fangkuai.github.io/"
+          label={_(msg`@lk8fangkuai.github.io`)}>
+          {_(msg`@lk8fangkuai.github.io`)}
+        </InlineLinkText>
       </Text>
 
       {kawaii && (
