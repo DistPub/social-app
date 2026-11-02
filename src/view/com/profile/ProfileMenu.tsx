@@ -66,8 +66,15 @@ import {useDevMode} from '#/storage/hooks/dev-mode'
 
 let ProfileMenu = ({
   profile,
+  onOpenChange,
 }: {
   profile: Shadow<AppBskyActorDefs.ProfileViewDetailed>
+  /**
+   * Optional callback fired when the menu opens or closes.
+   * Used by e.g. ProfileHoverCard to keep the card visible while the menu is
+   * open (the menu renders in a portal outside the card's hover area).
+   */
+  onOpenChange?: (open: boolean) => void
 }): React.ReactNode => {
   const t = useTheme()
   const ax = useAnalytics()
@@ -103,6 +110,10 @@ let ProfileMenu = ({
 
   const blockPromptControl = Prompt.usePromptControl()
   const loggedOutWarningPromptControl = Prompt.usePromptControl()
+  const menuControl = Menu.useMenuControl()
+  React.useEffect(() => {
+    onOpenChange?.(menuControl.isOpen)
+  }, [menuControl.isOpen, onOpenChange])
   const goLiveDialogControl = useDialogControl()
   const goLiveDisabledDialogControl = useDialogControl()
   const addToStarterPacksDialogControl = useDialogControl()
@@ -237,7 +248,7 @@ let ProfileMenu = ({
 
   return (
     <EventStopper onKeyDown={false}>
-      <Menu.Root>
+      <Menu.Root control={menuControl}>
         <Menu.Trigger label={_(msg`More options`)}>
           {({props}) => {
             return (

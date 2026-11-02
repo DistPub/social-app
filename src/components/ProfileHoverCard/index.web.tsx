@@ -19,11 +19,13 @@ import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {usePrefetchProfileQuery, useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
+import {ProfileMenu} from '#/view/com/profile/ProfileMenu'
 import {formatCount} from '#/view/com/util/numeric/format'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {ProfileHeaderHandle} from '#/screens/Profile/Header/Handle'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {MessageProfileButton} from '#/components/dms/MessageProfileButton'
 import {useFollowMethods} from '#/components/hooks/useFollowMethods'
 import {useRichText} from '#/components/hooks/useRichText'
 import {Check_Stroke2_Corner0_Rounded as Check} from '#/components/icons/Check'
@@ -92,6 +94,7 @@ type State =
       stage: 'might-show' | 'showing'
       effect?: () => () => any
       reason: 'hovered-target' | 'hovered-card'
+      isMenuOpen?: boolean
     }
 
 type Action =
@@ -104,6 +107,8 @@ type Action =
   | 'hovered-long-enough'
   | 'unhovered-long-enough'
   | 'finished-animating-hide'
+  | 'menu-opened'
+  | 'menu-closed'
 
 const SHOW_DELAY = 500
 const SHOW_DURATION = 300
@@ -124,6 +129,14 @@ export function ProfileHoverCardInner(props: ProfileHoverCardProps) {
       // No matter which stage we're in.
       if (action === 'pressed') {
         return hidden()
+      }
+
+      // The profile menu (rendered inside the card) opened or closed. While it
+      // is open, we suppress hiding the card: the menu renders in a portal
+      // outside of the card's hover area, so without this the card would fade
+      // out and unmount the moment the pointer moved onto the menu.
+      if (action === 'menu-opened' || action === 'menu-closed') {
+        return {...state, isMenuOpen: action === 'menu-opened'}
       }
 
       // --- Hidden ---
@@ -192,13 +205,18 @@ export function ProfileHoverCardInner(props: ProfileHoverCardProps) {
         }
       }
       if (state.stage === 'showing') {
-        // If the user moves the pointer away, we'll begin to consider hiding it.
-        if (action === 'unhovered-target' || action === 'unhovered-card') {
+        // While the profile menu is open, the pointer lives on the menu (a
+        // portal outside the card), not on the card. Don't start hiding.
+        if (
+          !state.isMenuOpen &&
+          (action === 'unhovered-target' || action === 'unhovered-card')
+        ) {
           return mightHide()
         }
         // Scrolling away if the hover is on the target instantly hides without a delay.
         // If the hover is already on the card, we won't this.
         if (
+          !state.isMenuOpen &&
           state.reason === 'hovered-target' &&
           action === 'scrolled-while-showing'
         ) {
@@ -289,24 +307,31 @@ export function ProfileHoverCardInner(props: ProfileHoverCardProps) {
       didFireHover.current = true
       dispatch('hovered-target')
     }
-  }, [prefetchIfNeeded])
+  }, [prefetchIfNeeded, dispatch])
 
   const onPointerLeaveTarget = React.useCallback(() => {
     didFireHover.current = false
     dispatch('unhovered-target')
-  }, [])
+  }, [dispatch])
 
   const onPointerEnterCard = React.useCallback(() => {
     dispatch('hovered-card')
-  }, [])
+  }, [dispatch])
 
   const onPointerLeaveCard = React.useCallback(() => {
     dispatch('unhovered-card')
-  }, [])
+  }, [dispatch])
+
+  const onMenuOpenChange = React.useCallback(
+    (open: boolean) => {
+      dispatch(open ? 'menu-opened' : 'menu-closed')
+    },
+    [dispatch],
+  )
 
   const onPress = React.useCallback(() => {
     dispatch('pressed')
-  }, [])
+  }, [dispatch])
 
   const isVisible =
     currentState.stage === 'showing' ||
@@ -338,7 +363,12 @@ export function ProfileHoverCardInner(props: ProfileHoverCardProps) {
             onPointerEnter={onPointerEnterCard}
             onPointerLeave={onPointerLeaveCard}>
             <div style={{willChange: 'transform', ...animationStyle}}>
-              <Card did={props.did} hide={onPress} navigation={navigation} />
+              <Card
+                did={props.did}
+                hide={onPress}
+                navigation={navigation}
+                onMenuOpenChange={onMenuOpenChange}
+              />
             </div>
           </div>
         </Portal>
@@ -351,10 +381,12 @@ let Card = ({
   did,
   hide,
   navigation,
+  onMenuOpenChange,
 }: {
   did: string
   hide: () => void
   navigation: NavigationProp
+  onMenuOpenChange: (open: boolean) => void
 }): React.ReactNode => {
   const t = useTheme()
 
@@ -396,7 +428,12 @@ let Card = ({
             onPressOpenProfile={onPressOpenProfile}
           />
         ) : (
-          <Inner profile={data} moderationOpts={moderationOpts} hide={hide} />
+          <Inner
+            profile={data}
+            moderationOpts={moderationOpts}
+            hide={hide}
+            onMenuOpenChange={onMenuOpenChange}
+          />
         )
       ) : (
         <View
@@ -418,14 +455,16 @@ function Inner({
   profile,
   moderationOpts,
   hide,
+  onMenuOpenChange,
 }: {
   profile: AppBskyActorDefs.ProfileViewDetailed
   moderationOpts: ModerationOpts
   hide: () => void
+  onMenuOpenChange: (open: boolean) => void
 }) {
   const t = useTheme()
   const {_, i18n} = useLingui()
-  const {currentAccount} = useSession()
+  const {currentAccount, hasSession} = useSession()
   const moderation = React.useMemo(
     () => moderateProfile(profile, moderationOpts),
     [profile, moderationOpts],
@@ -488,27 +527,36 @@ function Inner({
               <ButtonText>{_(msg`View profile`)}</ButtonText>
             </Link>
           ) : (
-            <Button
-              size="small"
-              color={profileShadow.viewer?.following ? 'secondary' : 'primary'}
-              variant="solid"
-              label={
-                profileShadow.viewer?.following
-                  ? _(msg`Following`)
-                  : _(msg`Follow`)
-              }
-              style={[a.rounded_full]}
-              onPress={profileShadow.viewer?.following ? unfollow : follow}>
-              <ButtonIcon
-                position="left"
-                icon={profileShadow.viewer?.following ? Check : Plus}
+            <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+              {hasSession && <MessageProfileButton profile={profileShadow} />}
+              <Button
+                size="small"
+                color={
+                  profileShadow.viewer?.following ? 'secondary' : 'primary'
+                }
+                variant="solid"
+                label={
+                  profileShadow.viewer?.following
+                    ? _(msg`Following`)
+                    : _(msg`Follow`)
+                }
+                style={[a.rounded_full]}
+                onPress={profileShadow.viewer?.following ? unfollow : follow}>
+                <ButtonIcon
+                  position="left"
+                  icon={profileShadow.viewer?.following ? Check : Plus}
+                />
+                <ButtonText>
+                  {profileShadow.viewer?.following
+                    ? _(msg`Following`)
+                    : _(msg`Follow`)}
+                </ButtonText>
+              </Button>
+              <ProfileMenu
+                profile={profileShadow}
+                onOpenChange={onMenuOpenChange}
               />
-              <ButtonText>
-                {profileShadow.viewer?.following
-                  ? _(msg`Following`)
-                  : _(msg`Follow`)}
-              </ButtonText>
-            </Button>
+            </View>
           ))}
       </View>
 
