@@ -17,6 +17,7 @@ import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
 import {useSession} from '#/state/session'
 import {useIsDrawerOpen, useSetDrawerOpen} from '#/state/shell'
 import {useComposerKeyboardShortcut} from '#/state/shell/composer/useComposerKeyboardShortcut'
+import {useLoggedOutView} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
 import {Lightbox} from '#/view/com/lightbox/Lightbox'
 import {ModalsContainer} from '#/view/com/modals/Modal'
@@ -124,6 +125,10 @@ function ShellInner() {
   const isAtMessages = useIsAtMessages()
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
+  // Hide the DME layer while the logged-out (add account / sign in) view is
+  // showing: it replaces the navigator's content, but the route may still be
+  // /messages, and the fixed-position embed would otherwise sit on top of it.
+  const {showLoggedOut} = useLoggedOutView()
   // Keep the DME embed clear of the notch/status bar on notched devices. It is
   // `position: fixed`, so it escapes the app-level `#root` safe-area padding
   // that every other tab screen relies on — it must reserve the top inset
@@ -233,7 +238,10 @@ function ShellInner() {
                   ],
                 }
               : {left: 0, right: 0, bottom: DME_MOBILE_BOTTOM_INSET},
-            {display: isAtMessages ? 'flex' : 'none', top: topInset},
+            {
+              display: isAtMessages && !showLoggedOut ? 'flex' : 'none',
+              top: topInset,
+            },
           ]}>
           <DmeEmbed
             key={currentAccount?.did ?? 'signed-out'}
