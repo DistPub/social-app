@@ -120,7 +120,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **网络协议与单一事实来源**
 
-- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`/`DME_STORAGE_LOAD`/`DME_STORAGE_SET`/`DME_STORAGE_REMOVE`/`DME_STORAGE_CLEAR`/`DME_STORAGE_DATA`/`DME_NAVIGATE`/`DME_OPEN_URL`/`DME_SHARE`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
+- 协议常量唯一定义在 `src/lib/dme-embed/constants.ts`：`DME_EMBED_ORIGIN`（默认 `https://dme.hukoubook.com`，可用环境变量 `EXPO_PUBLIC_DME_EMBED_ORIGIN` 覆盖）、`DME_EMBED_PROTOCOL = 'dme-embed/v1'`、`DME_MSG`（`DME_READY`/`DME_TOKEN`/`DME_SESSION_INVALID`/`DME_UNREAD`/`DME_ACTION_NEEDED`/`DME_PING`/`DME_PONG`/`DME_CHAT_ACTIVE`/`DME_STORAGE_LOAD`/`DME_STORAGE_SET`/`DME_STORAGE_REMOVE`/`DME_STORAGE_CLEAR`/`DME_STORAGE_DATA`/`DME_NAVIGATE`/`DME_OPEN_URL`/`DME_SHARE`）、`DME_READY_TIMEOUT_MS = 8000`、`DME_KEEPALIVE_INTERVAL_MS = 270_000`、`DME_KEEPALIVE_MAX_MISS = 3`
 - **`constants.ts` 是协议的单一事实来源**，与 dme 仓库的对接规格以它为准；消息名与 `dme-embed/v1` 版本字符串必须与 dme 侧逐字一致，不得自行改名或改值
 
 **新增文件（均为 web-only）**
@@ -128,6 +128,7 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 - `src/lib/dme-embed/useDmeEmbedBridge.ts` — postMessage 状态机 hook（`waiting`/`ready`/`active`/`unavailable`/`degraded`），导出模块级 `sendToDme(type, payload)`；接收 `DME_NAVIGATE`（`options.onNavigate(path)` → 站内 SPA 跳转）与 `DME_OPEN_URL`（`options.onOpenExternalUrl(url)` → 拉起网页视图），两条消息均先经安全校验（`isValidNavigatePath` / `isValidExternalUrl`）再回调
 - `src/lib/dme-embed/useDmeTokenProvider.ts` — `useDmeTokenProvider({sendToDme})`，提供 `getToken`/`onSessionInvalid`
 - `src/state/dme/useDmeUnreadCount.ts` — 纯内存未读 store（`useSyncExternalStore`），导出 `reportDmeUnread`；`null` 表示 dme 尚未上报
+- `src/state/dme/useDmeActionNeeded.ts` — 纯内存「会话异常需处理」store（套路同未读 store），导出 `reportDmeActionNeeded(needed, count)`/`resetDmeActionNeeded()`；接收 `DME_ACTION_NEEDED`（DME 单向通知：有会话带异常横幅需用户在 DME 内做恢复动作，`needed=false` 撤销），fatesky 只负责提醒、不区分异常种类、不回发
 - `src/screens/Messages/DmeEmbed.tsx` — web-only iframe 容器
 - `src/lib/dme-embed/dmeStorage.ts` — per-DID localStorage 存储读写模块（load/set/remove/clear/clearAll），含 IS_WEB 守卫确保 native 安全
 - `src/lib/dme-embed/dmeShare.ts` — 「通过私信发送」的模块级单槽缓冲（`requestDmeShare`/`consumeDmeShare`/`setDmeShareBridgeReady`/`registerDmeShareFlushHandler`），套路同 `useDmeUnreadCount`；保证 DME 未握手时点击分享不丢失（缓存至 READY 后 flush）
@@ -136,8 +137,8 @@ commit `06a11dcc7`（`feat(dme-embed): embed DME encrypted chat into web Message
 
 **修改文件**
 
-- `src/view/shell/index.web.tsx` — **keep-mounted**：DME iframe 挂在 shell 层（navigator 之外），路由切换用 `display` 切换（`display: isAtMessages ? 'flex' : 'none'`）而非卸载；`key={currentAccount?.did}` 是唯一的合法重挂载点（账号切换）；did 变化时 `reportDmeUnread(null)` 重置角标。新增 `useDmeChatActive` 向 DME 推送 `DME_CHAT_ACTIVE`（payload `{active: boolean}`），解决 iframe 被隐藏后 DME 无法感知用户已离开聊天页面的问题。新增 `handleDmeNavigate`（`router.matchPath(path)` → `navigator.dispatch(CommonActions.navigate(...))` 站内 SPA 跳转，query 解析进 params、hash 丢弃）与 `handleDmeOpenExternalUrl`（`window.open(url, '_blank', 'noopener,noreferrer')`）并透传给 `<DmeEmbed>`
-- `src/view/shell/desktop/LeftNav.tsx` / `src/view/shell/bottom-bar/BottomBarWeb.tsx` / `src/Navigation.tsx` — 未读角标/标题叠加
+- `src/view/shell/index.web.tsx` — **keep-mounted**：DME iframe 挂在 shell 层（navigator 之外），路由切换用 `display` 切换（`display: isAtMessages ? 'flex' : 'none'`）而非卸载；`key={currentAccount?.did}` 是唯一的合法重挂载点（账号切换）；did 变化时 `reportDmeUnread(null)` + `resetDmeActionNeeded()` 重置角标。新增 `useDmeChatActive` 向 DME 推送 `DME_CHAT_ACTIVE`（payload `{active: boolean}`），解决 iframe 被隐藏后 DME 无法感知用户已离开聊天页面的问题。新增 `handleDmeNavigate`（`router.matchPath(path)` → `navigator.dispatch(CommonActions.navigate(...))` 站内 SPA 跳转，query 解析进 params、hash 丢弃）与 `handleDmeOpenExternalUrl`（`window.open(url, '_blank', 'noopener,noreferrer')`）并透传给 `<DmeEmbed>`
+- `src/view/shell/desktop/LeftNav.tsx` / `src/view/shell/bottom-bar/BottomBarWeb.tsx` / `src/Navigation.tsx` — 未读角标/标题叠加；其中 LeftNav 与 BottomBarWeb 的 /messages 入口在图标角上额外渲染**黄色点**（`t.palette.yellow`，区别于未读蓝点/计数），由 `useDmeActionNeeded()` 驱动，可与未读角标同时显示
 
 **关键约束 / 坑**
 

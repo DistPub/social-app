@@ -29,6 +29,7 @@ import {
   removeDmeStorageItem,
   setDmeStorageItem,
 } from '#/lib/dme-embed/dmeStorage'
+import {reportDmeActionNeeded} from '#/state/dme/useDmeActionNeeded'
 import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
 
 /**
@@ -376,6 +377,25 @@ export function useDmeEmbedBridge(
           // Normalize NaN (typeof 'number' but not a real count) to null too.
           const safeCount = count !== null && Number.isNaN(count) ? null : count
           reportDmeUnread(safeCount)
+          break
+        }
+        case DME_MSG.ACTION_NEEDED: {
+          // DME → fatesky: one-way notification that at least one conversation
+          // carries an anomaly banner (sibling-rotated / forked / desynced)
+          // that needs a recovery action INSIDE the embed. `needed=false`
+          // clears the marker. No reply is sent — the embed's own banner gives
+          // the user the actual guidance; fatesky only brings them in.
+          const payload = event.data.payload as {
+            needed?: unknown
+            count?: unknown
+          } | null
+          if (
+            typeof payload?.needed === 'boolean' &&
+            typeof payload?.count === 'number' &&
+            Number.isFinite(payload.count)
+          ) {
+            reportDmeActionNeeded(payload.needed, payload.count)
+          }
           break
         }
         case DME_MSG.PONG: {

@@ -17,6 +17,7 @@ import {
 } from '#/lib/routes/types'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'
+import {useDmeActionNeeded} from '#/state/dme/useDmeActionNeeded'
 import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {emitSoftReset} from '#/state/events'
 import {useFetchHandle} from '#/state/queries/handle'
@@ -368,12 +369,25 @@ function SwitchMenuItem({
 interface NavItemProps {
   count?: string
   hasNew?: boolean
+  /** At least one DME conversation needs a recovery action inside the embed */
+  actionNeeded?: boolean
+  /** How many DME conversations need action (for the a11y label only) */
+  actionNeededCount?: number
   href: string
   icon: JSX.Element
   iconFilled: JSX.Element
   label: string
 }
-function NavItem({count, hasNew, href, icon, iconFilled, label}: NavItemProps) {
+function NavItem({
+  count,
+  hasNew,
+  actionNeeded,
+  actionNeededCount,
+  href,
+  icon,
+  iconFilled,
+  label,
+}: NavItemProps) {
   const t = useTheme()
   const {_} = useLingui()
   const {currentAccount} = useSession()
@@ -507,6 +521,40 @@ function NavItem({count, hasNew, href, icon, iconFilled, label}: NavItemProps) {
             ]}
           />
         ) : null}
+        {/*
+         * DME "action needed" marker — distinct from the unread badges above
+         * (blue dot / count): a yellow dot at the icon's BOTTOM-right corner,
+         * so it can coexist with an unread badge. Rendered independently of
+         * the ternary chain so both can show at once.
+         */}
+        {actionNeeded ? (
+          <View
+            accessible={true}
+            accessibilityLabel={_(
+              msg`${plural(actionNeededCount ?? 0, {
+                one: '# conversation needs attention',
+                other: '# conversations need attention',
+              })}`,
+            )}
+            accessibilityHint=""
+            style={[
+              a.absolute,
+              a.rounded_full,
+              a.z_20,
+              {
+                backgroundColor: t.palette.yellow,
+                width: 8,
+                height: 8,
+                right: -2,
+                bottom: -4,
+              },
+              leftNavMinimal && {
+                right: 4,
+                bottom: 2,
+              },
+            ]}
+          />
+        ) : null}
       </View>
       {!leftNavMinimal && (
         <Text style={[a.text_xl, isCurrent ? a.font_bold : a.font_normal]}>
@@ -591,6 +639,9 @@ function ChatNavItem() {
   // DME is the sole chat system on web — the badge comes exclusively from the
   // DME embed's unread reports (null = not yet reported, show no badge).
   const {dmeUnread, hasNew} = useDmeUnreadCount()
+  // DME "action needed" reports (conversations with anomaly banners that need
+  // a recovery action inside the embed) — shown as a distinct yellow dot.
+  const {actionNeeded, count: actionNeededCount} = useDmeActionNeeded()
 
   const count =
     dmeUnread === null
@@ -606,6 +657,8 @@ function ChatNavItem() {
       href="/messages"
       count={count}
       hasNew={hasNew}
+      actionNeeded={actionNeeded}
+      actionNeededCount={actionNeededCount}
       icon={
         <Message style={pal.text} aria-hidden={true} width={NAV_ICON_WIDTH} />
       }

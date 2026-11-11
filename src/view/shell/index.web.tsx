@@ -13,6 +13,7 @@ import {useDmeTokenProvider} from '#/lib/dme-embed/useDmeTokenProvider'
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
 import {getCurrentRoute} from '#/lib/routes/helpers'
 import {type NavigationProp} from '#/lib/routes/types'
+import {resetDmeActionNeeded} from '#/state/dme/useDmeActionNeeded'
 import {reportDmeUnread} from '#/state/dme/useDmeUnreadCount'
 import {useSession} from '#/state/session'
 import {useIsDrawerOpen, useSetDrawerOpen} from '#/state/shell'
@@ -169,15 +170,17 @@ function ShellInner() {
     return unsubscribe
   }, [navigator, closeAllActiveElements])
 
-  // Clear the DME unread badge whenever the signed-in account changes
-  // (account switch or logout). The ref makes this fire only on a genuine
-  // did change, never on every render. `reportDmeUnread` is idempotent.
+  // Clear the DME unread badge and the "action needed" marker whenever the
+  // signed-in account changes (account switch or logout). The ref makes this
+  // fire only on a genuine did change, never on every render. Both reports
+  // are idempotent.
   const prevDidRef = useRef(currentAccount?.did)
   useEffect(() => {
     const did = currentAccount?.did
     if (prevDidRef.current !== did) {
       prevDidRef.current = did
       reportDmeUnread(null)
+      resetDmeActionNeeded()
       // The DME embed will remount on the new did and must re-handshake.
       setDmeReady(false)
     }

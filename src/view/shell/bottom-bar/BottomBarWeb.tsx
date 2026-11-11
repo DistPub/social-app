@@ -10,6 +10,7 @@ import {useMinimalShellFooterTransform} from '#/lib/hooks/useMinimalShellTransfo
 import {getCurrentRoute, isTab} from '#/lib/routes/helpers'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
+import {useDmeActionNeeded} from '#/state/dme/useDmeActionNeeded'
 import {useDmeUnreadCount} from '#/state/dme/useDmeUnreadCount'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
@@ -60,6 +61,9 @@ export function BottomBarWeb() {
   // DME is the sole chat system on web — the badge comes exclusively from the
   // DME embed's unread reports (null = not yet reported, show no badge).
   const {dmeUnread, hasNew: dmeHasNew} = useDmeUnreadCount()
+  // DME "action needed" reports (conversations with anomaly banners that need
+  // a recovery action inside the embed) — shown as a distinct yellow dot.
+  const {actionNeeded, count: actionNeededCount} = useDmeActionNeeded()
   const notificationCountStr = useUnreadNotifications()
 
   const messageCount =
@@ -136,7 +140,9 @@ export function BottomBarWeb() {
                   routeName="Messages"
                   href="/messages"
                   notificationCount={messageCount}
-                  hasNew={messageHasNew}>
+                  hasNew={messageHasNew}
+                  actionNeeded={actionNeeded}
+                  actionNeededCount={actionNeededCount}>
                   {({isActive}) => {
                     const Icon = isActive ? MessageFilled : Message
                     return (
@@ -261,9 +267,22 @@ const NavItem: React.FC<{
   href: string
   routeName: string
   hasNew?: boolean
+  /** At least one DME conversation needs a recovery action inside the embed */
+  actionNeeded?: boolean
+  /** How many DME conversations need action (for the a11y label only) */
+  actionNeededCount?: number
   notificationCount?: string
   onLongPress?: () => void
-}> = ({children, href, routeName, hasNew, notificationCount, onLongPress}) => {
+}> = ({
+  children,
+  href,
+  routeName,
+  hasNew,
+  actionNeeded,
+  actionNeededCount,
+  notificationCount,
+  onLongPress,
+}) => {
   const t = useTheme()
   const {_} = useLingui()
   const {currentAccount} = useSession()
@@ -317,6 +336,27 @@ const NavItem: React.FC<{
         </View>
       ) : hasNew ? (
         <View style={styles.hasNewBadge} />
+      ) : null}
+      {/*
+       * DME "action needed" marker — a yellow dot on the icon's LEFT, so it
+       * can coexist with the unread count/hasNew badges (right of center).
+       * Rendered independently of the ternary chain above so both can show.
+       */}
+      {actionNeeded ? (
+        <View
+          accessible={true}
+          accessibilityLabel={_(
+            msg`${plural(actionNeededCount ?? 0, {
+              one: '# conversation needs attention',
+              other: '# conversations need attention',
+            })}`,
+          )}
+          accessibilityHint=""
+          style={[
+            styles.actionNeededBadge,
+            {backgroundColor: t.palette.yellow},
+          ]}
+        />
       ) : null}
     </Link>
   )

@@ -23,6 +23,7 @@ export const DME_MSG = {
   TOKEN: 'DME_TOKEN',
   SESSION_INVALID: 'DME_SESSION_INVALID',
   UNREAD: 'DME_UNREAD',
+  ACTION_NEEDED: 'DME_ACTION_NEEDED', // DME → fatesky: 有会话需要用户在 DME 内做恢复动作 {needed, count}
   PING: 'DME_PING',
   PONG: 'DME_PONG',
   CHAT_ACTIVE: 'DME_CHAT_ACTIVE',

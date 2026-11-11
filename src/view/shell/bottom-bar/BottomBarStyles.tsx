@@ -51,6 +51,18 @@ export const styles = StyleSheet.create({
     borderRadius: 6,
     zIndex: 1,
   },
+  // DME "action needed" marker (color set inline via t.palette.yellow).
+  // Positioned on the icon's LEFT so it can coexist with the unread
+  // count/hasNew badges, which sit right of center.
+  actionNeededBadge: {
+    position: 'absolute',
+    right: '54%',
+    top: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 6,
+    zIndex: 1,
+  },
   ctrlIcon: {
     marginLeft: 'auto',
     marginRight: 'auto',
